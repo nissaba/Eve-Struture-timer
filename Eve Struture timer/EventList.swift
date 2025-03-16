@@ -29,7 +29,7 @@ struct EventList: View{
         }
         .focusedSceneValue(\.showSheet, $showSheet)
         .sheet(isPresented: $showSheet) {
-            ContentView(isVisible: $showSheet)
+            EventFormView(isVisible: $showSheet)
         }
         
     }
