@@ -12,8 +12,10 @@ import AppKit
 struct EventFormView: View {
     private enum Constants {
         static let enterData = "Enter Data"
-        static let systemNamePlaceholder = "System Name"
-        static let planetNumberPlaceholder = "Planet number"
+        static let systemNamePlaceholder = "Jita"
+        static let systemNameError = "System name must not be empty"
+        static let planetNumberPlaceholder = "8"
+        static let planetNumberError = "Planet number must be a positive integer"
         static let optionalEventStartPlaceholder = "Optional Event Start Time (HH:mm)"
         static let optionalEventStartError = "Expected DD:HH:MM or empty"
         static let timeToAddPlaceholder = "Time to add D:HH:MM"
@@ -24,24 +26,32 @@ struct EventFormView: View {
         static let badDate = "Bad date"
         static let missingPlanetNumber = "Planet Number Missing"
         static let copyButtonLabel = "Copy"
-        static let calculateButtonLabel = "Calculate"
+        static let cancelButtonLabel = "Cancel"
         static let saveButtonLabel = "Save"
-        static let timeStartEventValidationPattern = #"^$|^(\d{1,2}):([0-1]?\d|2[0-3]):([0-5]?\d)?$"#
-        static let addTimeValidationPattern = #"^(0|1|2):([0-1]?[0-9]|2[0-3]):([0-5]?[0-9])$"#
+        static let timeStartEventValidationPattern = #"^$|^(0?[0-9]|1[0-9]|2[0-3]):([0-5][0-9])$"#
+        static let addTimeValidationPattern = #"^[01]:(\d|0\d|1\d|2[0-3]):(\d|[0-5]\d)$"#
+        static let planetNumberValidationPattern = #"^[1-9]\d*$"#
+        static let systemNameValidationPattern = #"^.+$"#
         static let defaultPlanetValue: Int8 = 0
     }
+    
     @Environment(\.modelContext) private var context
     @Binding var isVisible: Bool
-    
     @State private var eventStartTime: String = ""
     @State private var timeToAdd: String = ""
     @State private var systemName: String = ""
     @State private var planetNumber: String = ""
     @State private var resultText: String = "Enter Data"
     @State private var calculatedDate: Date?
-    
+    @State private var isSystemNameValid: Bool = false
     @State private var isEventStartTimeValid: Bool = true
     @State private var isTimeToAddValid: Bool = false
+    @State private var isPlanetNumberValid: Bool = false
+    
+    
+    var isAllValid: Bool {
+        isSystemNameValid && isEventStartTimeValid && isTimeToAddValid && isPlanetNumberValid
+    }
     
     var body: some View {
         VStack {
@@ -49,18 +59,28 @@ struct EventFormView: View {
             resultView
             actionButtons
         }
+        .onChange(of: isAllValid) { newValue,_ in
+            if newValue {
+                calculateFutureTime()
+            }
+        }
         .padding()
+        .frame(width: 300, height: 150)
     }
     
     private var inputFields: some View {
         VStack(alignment: .center) {
-            TextField(Constants.systemNamePlaceholder, text: $systemName)
-                .textFieldStyle(RoundedBorderTextFieldStyle())
-                .padding()
+            ValidationTextField(text: $systemName,
+                                isValid: $isSystemNameValid,
+                                placeHolder: Constants.systemNamePlaceholder,
+                                errorMessage: Constants.systemNameError,
+                                validator: RegexValidator(pattern: Constants.systemNameValidationPattern))
             
-            TextField(Constants.planetNumberPlaceholder, text: $planetNumber)
-                .textFieldStyle(RoundedBorderTextFieldStyle())
-                .padding()
+            ValidationTextField(text: $planetNumber,
+                                isValid: $isPlanetNumberValid,
+                                placeHolder: Constants.planetNumberPlaceholder,
+                                errorMessage: Constants.planetNumberError,
+                                validator: RegexValidator(pattern: Constants.planetNumberValidationPattern))
             
             ValidationTextField(
                 text: $eventStartTime,
@@ -73,7 +93,7 @@ struct EventFormView: View {
             ValidationTextField(
                 text: $timeToAdd,
                 isValid: $isTimeToAddValid,
-                placeHolder: Constants.optionalEventStartPlaceholder,
+                placeHolder: Constants.timeToAddPlaceholder,
                 errorMessage: Constants.timeToAddError,
                 validator: RegexValidator(pattern: Constants.addTimeValidationPattern)
             )
@@ -95,11 +115,14 @@ struct EventFormView: View {
     
     private var actionButtons: some View {
         HStack {
-            Button(Constants.calculateButtonLabel, action: calculateFutureTime).padding()
             Button(Constants.saveButtonLabel, action: saveEvent).padding()
+            Button(Constants.cancelButtonLabel, action: cancelAction).padding()
         }
     }
     
+    private func cancelAction(){
+        isVisible = false
+    }
     private func saveEvent() {
         guard let planet = Int8(planetNumber) else {
             resultText = Constants.missingPlanetNumber
