@@ -1,1 +1,1 @@
-# mercDenTimer
+# Eve Online Mercenary Den Timers
