@@ -58,8 +58,13 @@ struct ValidationTextField: View {
                 )
                 .modifier(Shake(animatableData: CGFloat(attempts)))
                 .focused($isTextFieldFocused)
-                .onChange(of: isTextFieldFocused) { _, newValue in
-                    if !newValue { validate() }
+                .onChange(of: text) { _,_ in
+                    validate(animate: false)
+                }
+                .onChange(of: isTextFieldFocused) { oldValue, newValue in
+                    if !newValue {
+                        validate()
+                    }
                 }
                 .onSubmit { validate() }
             
@@ -71,9 +76,9 @@ struct ValidationTextField: View {
         .padding(.horizontal)
     }
     
-    private func validate() {
+    private func validate(animate: Bool = true) {
         let newValidity = validator.isValid(text)
-        if !newValidity {
+        if !newValidity && animate {
             withAnimation(.default) { attempts += 1 }
         }
         isValid = newValidity
