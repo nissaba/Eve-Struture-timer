@@ -62,6 +62,23 @@ struct EventFormView: View {
             _systemName = State(initialValue: event.systemName)
             _planetNumber = State(initialValue: "\(event.planet)")
             _calculatedDate = State(initialValue: event.date)
+            // Calculate time remaining
+            let now = Date()
+            let remainingTime = event.date.timeIntervalSince(now)
+            let secondsPerDay = 86_400
+            let secondsPerHour = 3_600
+            let secondsPerMinutes = 60
+            
+            if remainingTime > 0 {
+                let days = Int(remainingTime) / secondsPerDay
+                let hours = (Int(remainingTime) % secondsPerDay) / secondsPerHour
+                let minutes = (Int(remainingTime) % secondsPerHour) / secondsPerMinutes
+                
+                let formattedTime = String(format: "%d:%02d:%02d", days, hours, minutes)
+                _timeToAdd = State(initialValue: formattedTime)
+            } else {
+                _timeToAdd = State(initialValue: "00:00:00")
+            }
         }
     }
     
@@ -83,17 +100,21 @@ struct EventFormView: View {
     
     private var inputFields: some View {
         VStack(alignment: .center) {
-            ValidationTextField(text: $systemName,
-                                isValid: $isSystemNameValid,
-                                placeHolder: Constants.systemNamePlaceholder,
-                                errorMessage: Constants.systemNameError,
-                                validator: RegexValidator(pattern: Constants.systemNameValidationPattern))
+            ValidationTextField(
+                text: $systemName,
+                isValid: $isSystemNameValid,
+                placeHolder: Constants.systemNamePlaceholder,
+                errorMessage: Constants.systemNameError,
+                validator: RegexValidator(pattern: Constants.systemNameValidationPattern)
+            )
             
-            ValidationTextField(text: $planetNumber,
-                                isValid: $isPlanetNumberValid,
-                                placeHolder: Constants.planetNumberPlaceholder,
-                                errorMessage: Constants.planetNumberError,
-                                validator: RegexValidator(pattern: Constants.planetNumberValidationPattern))
+            ValidationTextField(
+                text: $planetNumber,
+                isValid: $isPlanetNumberValid,
+                placeHolder: Constants.planetNumberPlaceholder,
+                errorMessage: Constants.planetNumberError,
+                validator: RegexValidator(pattern: Constants.planetNumberValidationPattern)
+            )
             
             ValidationTextField(
                 text: $eventStartTime,
