@@ -46,6 +46,7 @@ struct ValidationTextField: View {
         self.placeHolder = placeHolder
         self.errorMessage = errorMessage
         self.validator = validator
+        
     }
     
     var body: some View {
@@ -58,6 +59,9 @@ struct ValidationTextField: View {
                 )
                 .modifier(Shake(animatableData: CGFloat(attempts)))
                 .focused($isTextFieldFocused)
+                .onAppear() {
+                    validate(animate: false)
+                }
                 .onChange(of: text) { _,_ in
                     validate(animate: false)
                 }

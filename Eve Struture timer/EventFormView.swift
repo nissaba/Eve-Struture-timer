@@ -47,10 +47,22 @@ struct EventFormView: View {
     @State private var isEventStartTimeValid: Bool = true
     @State private var isTimeToAddValid: Bool = false
     @State private var isPlanetNumberValid: Bool = false
+    var editingEvent: KillTimeEvent?
     
     
     var isAllValid: Bool {
-        isSystemNameValid && isEventStartTimeValid && isTimeToAddValid && isPlanetNumberValid
+        print(" isSystemNameValid: \(isSystemNameValid)\n isPlanetNumberValid: \(isPlanetNumberValid)\n isEventStartTimeValid: \(isEventStartTimeValid)\n isTimeToAddValid: \(isTimeToAddValid)\n")
+        return isSystemNameValid && isEventStartTimeValid && isTimeToAddValid && isPlanetNumberValid
+    }
+    
+    init(isVisible: Binding<Bool>, selectedEvent: KillTimeEvent? = nil) {
+        _isVisible = isVisible
+        self.editingEvent = selectedEvent
+        if let event = selectedEvent {
+            _systemName = State(initialValue: event.systemName)
+            _planetNumber = State(initialValue: "\(event.planet)")
+            _calculatedDate = State(initialValue: event.date)
+        }
     }
     
     var body: some View {
@@ -59,13 +71,14 @@ struct EventFormView: View {
             resultView
             actionButtons
         }
-        .onChange(of: isAllValid) { newValue,_ in
+        .onChange(of: isAllValid) { _, newValue in
             if newValue {
                 calculateFutureTime()
             }
         }
+        .frame(width: 300, height: 350)
         .padding()
-        .frame(width: 300, height: 150)
+        
     }
     
     private var inputFields: some View {
@@ -115,8 +128,10 @@ struct EventFormView: View {
     
     private var actionButtons: some View {
         HStack {
-            Button(Constants.saveButtonLabel, action: saveEvent).padding()
-            Button(Constants.cancelButtonLabel, action: cancelAction).padding()
+            Spacer()
+            Button(Constants.saveButtonLabel, action: saveEvent)
+            Button(Constants.cancelButtonLabel, action: cancelAction)
+            Spacer()
         }
     }
     
@@ -134,7 +149,10 @@ struct EventFormView: View {
             return
         }
         
-        if let existingEvent = fetchEvent(systemName: systemName, planet: planet) {
+        if let event = editingEvent {
+            updateEvent(event, with: date)
+        }
+        else if let existingEvent = fetchEvent(systemName: systemName, planet: planet) {
             updateEvent(existingEvent, with: date)
         } else {
             createNewEvent(with: date, systemName: systemName, planet: planet)
@@ -222,3 +240,6 @@ struct EventFormView: View {
     }
 }
 
+#Preview {
+    EventFormView(isVisible: .constant(true))
+}
