@@ -14,7 +14,7 @@ struct MyApp: App {
         Window("Mercenary Den Ref Timers", id: "mainWindow") {
             EventList()
         }.defaultSize(width: 600, height: 400)
-            .modelContainer(for: KillTimeEvent.self)
+            .modelContainer(for: ReinforcementTimeEvent.self)
             .commands {
                 CommandMenu("Events") {
                     ShowSheetButton()

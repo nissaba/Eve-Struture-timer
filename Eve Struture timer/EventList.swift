@@ -11,21 +11,32 @@ import SwiftData
 
 struct EventList: View{
     @Environment(\.modelContext) private var context
-    @Query private var items: [KillTimeEvent]
+    @Query private var items: [ReinforcementTimeEvent]
     @State private var showSheet = false
-    @State private var selectedEvent: KillTimeEvent?
+    @State private var selectedEvent: ReinforcementTimeEvent?
+    let titlePaddingRow: CGFloat = 8.0
     
     var body: some View{
         NavigationStack{
-            VStack{
-                Text("Number of Events: \(items.count)")
-                List{
-                    ForEach(items){item in
-                        EventRow(event: item) { item in
-                            selectedEvent = item
-                        }
+            VStack(alignment: .leading){
+                HStack(alignment: .bottom){
+                    Text("System")
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    Text("Planet")
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    Text("Eve Time")
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    Text("Local Time")
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    Spacer()
+                    Text("Actions")
+                }.padding([.top, .leading, .trailing], titlePaddingRow)
+                List(items){
+                    EventRow(event: $0) { item in
+                        selectedEvent = item
                     }
                 }
+                .listStyle(.bordered)
             }
             .frame(width: 400, height: 500)
             .focusedSceneValue(\.showSheet, $showSheet)
@@ -62,7 +73,7 @@ struct EventList: View{
 
 #Preview {
     do {
-        let container = try ModelContainer(for: KillTimeEvent.self, configurations: .init(isStoredInMemoryOnly: true))
+        let container = try ModelContainer(for: ReinforcementTimeEvent.self, configurations: .init(isStoredInMemoryOnly: true))
         return EventList()
             .modelContainer(container)
     } catch {

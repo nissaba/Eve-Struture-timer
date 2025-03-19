@@ -47,7 +47,8 @@ struct EventFormView: View {
     @State private var isEventStartTimeValid: Bool = true
     @State private var isTimeToAddValid: Bool = false
     @State private var isPlanetNumberValid: Bool = false
-    var editingEvent: KillTimeEvent?
+    @State private var isDefenseTimer: Bool = false
+    var editingEvent: ReinforcementTimeEvent?
     
     
     var isAllValid: Bool {
@@ -55,13 +56,15 @@ struct EventFormView: View {
         return isSystemNameValid && isEventStartTimeValid && isTimeToAddValid && isPlanetNumberValid
     }
     
-    init(isVisible: Binding<Bool>, selectedEvent: KillTimeEvent? = nil) {
+    init(isVisible: Binding<Bool>, selectedEvent: ReinforcementTimeEvent? = nil) {
         _isVisible = isVisible
         self.editingEvent = selectedEvent
         if let event = selectedEvent {
             _systemName = State(initialValue: event.systemName)
             _planetNumber = State(initialValue: "\(event.planet)")
             _calculatedDate = State(initialValue: event.date)
+            _isDefenseTimer = State(initialValue: event.isDefence)
+            
             // Calculate time remaining
             let now = Date()
             let remainingTime = event.date.timeIntervalSince(now)
@@ -131,6 +134,10 @@ struct EventFormView: View {
                 errorMessage: Constants.timeToAddError,
                 validator: RegexValidator(pattern: Constants.addTimeValidationPattern)
             )
+            
+            Toggle(isOn: $isDefenseTimer) {
+                Text("Is defence timer")
+            }
         }
     }
     
@@ -182,15 +189,16 @@ struct EventFormView: View {
         isVisible = false
     }
     
-    private func updateEvent(_ event: KillTimeEvent, with date: Date) {
+    private func updateEvent(_ event: ReinforcementTimeEvent, with date: Date) {
         event.date = date
         event.systemName = systemName
+        event.isDefence = isDefenseTimer
         event.planet = Int8(planetNumber) ?? Constants.defaultPlanetValue
         saveContext()
     }
     
     private func createNewEvent(with date: Date, systemName: String, planet: Int8) {
-        let newEvent = KillTimeEvent(date: date, systemName: systemName, planet: planet)
+        let newEvent = ReinforcementTimeEvent(date: date, systemName: systemName, planet: planet, isDefence: isDefenseTimer)
         context.insert(newEvent)
         saveContext()
     }
@@ -204,11 +212,11 @@ struct EventFormView: View {
         }
     }
     
-    private func fetchEvent(systemName: String, planet: Int8) -> KillTimeEvent? {
-        let predicate = #Predicate<KillTimeEvent> { event in
+    private func fetchEvent(systemName: String, planet: Int8) -> ReinforcementTimeEvent? {
+        let predicate = #Predicate<ReinforcementTimeEvent> { event in
             event.systemName == systemName && event.planet == planet
         }
-        let fetchDescriptor = FetchDescriptor<KillTimeEvent>(predicate: predicate)
+        let fetchDescriptor = FetchDescriptor<ReinforcementTimeEvent>(predicate: predicate)
         
         return try? context.fetch(fetchDescriptor).first
     }

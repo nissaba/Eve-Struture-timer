@@ -11,17 +11,23 @@ import SwiftData
 
 struct EventRow: View {
     @Environment(\.modelContext) private var context
-    let event: KillTimeEvent
-    var itemSelected: (_ item: KillTimeEvent) -> Void
+    let event: ReinforcementTimeEvent
+    var itemSelected: (_ item: ReinforcementTimeEvent) -> Void
 
     var body: some View {
         HStack {
             Text(event.systemName)
                 .frame(maxWidth: .infinity, alignment: .leading)
+                
             Text("\(event.planet)")
                 .frame(maxWidth: .infinity, alignment: .leading)
+                
             Text(formattedDate(date: event.date))
                 .frame(maxWidth: .infinity, alignment: .leading)
+                
+            Text(formattedLocalDate(date: event.date))
+                .frame(maxWidth: .infinity, alignment: .leading)
+                
 
             Spacer()
 
@@ -36,6 +42,9 @@ struct EventRow: View {
             }
             .buttonStyle(BorderlessButtonStyle())
         }
+        .foregroundColor(event.isDefence ? Color.red : Color.orange)
+        .padding( 4)
+        
     }
 
     private func deleteEvent() {
@@ -49,3 +58,11 @@ fileprivate func formattedDate(date: Date) -> String {
     dateFormatter.dateFormat = "dd/MM/yyyy HH:mm"
     return dateFormatter.string(from: date)
 }
+
+fileprivate func formattedLocalDate(date: Date) -> String {
+    let dateFormatter = DateFormatter()
+    dateFormatter.timeZone = TimeZone.current  // Uses the device's local time zone
+    dateFormatter.dateFormat = "dd/MM/yyyy HH:mm"
+    return dateFormatter.string(from: date)
+}
+

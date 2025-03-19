@@ -10,14 +10,16 @@ import SwiftUI
 import SwiftData
 
 @Model
-class KillTimeEvent {
+class ReinforcementTimeEvent {
     var date: Date
     var systemName: String
     var planet: Int8
+    var isDefence: Bool
     
-    init(date: Date, systemName: String, planet: Int8) {
+    init(date: Date, systemName: String, planet: Int8, isDefence: Bool) {
         self.date = date
         self.systemName = systemName
         self.planet = planet
+        self.isDefence = isDefence
     }
 }
