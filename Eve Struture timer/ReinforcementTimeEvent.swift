@@ -22,4 +22,7 @@ class ReinforcementTimeEvent {
         self.planet = planet
         self.isDefence = isDefence
     }
+    var isPastDue: Bool {
+            return date < Date() // Returns true if the event date is in the past
+        }
 }

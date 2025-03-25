@@ -22,6 +22,7 @@ struct EventRow: View {
     var body: some View {
         HStack {
             Text(event.systemName)
+                .strikethrough(event.isPastDue, color: .red)
                 .frame(maxWidth: .infinity, alignment: .leading)
             
             Text("\(event.planet)")
@@ -50,14 +51,17 @@ struct EventRow: View {
                 }
                 .buttonStyle(BorderlessButtonStyle())
             } label: {
-                Image(systemName: "ellipsis") // Just three dots, no circle
-                    .rotationEffect(.degrees(90))
+                Image(systemName: "ellipsis.circle")
+                    .font(.title2)
+                    .foregroundColor(.primary)
             }
             .buttonStyle(.plain)
+            .frame(alignment: .center)
+            .padding(.horizontal)
             
         }
         .foregroundColor(event.isDefence ? Color.red : Color.orange)
-        .padding( 4)
+        
         
     }
     

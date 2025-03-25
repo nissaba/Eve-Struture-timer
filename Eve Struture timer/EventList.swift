@@ -20,13 +20,16 @@ fileprivate struct CalanderEvent: Identifiable {
 
 struct EventList: View{
     @Environment(\.modelContext) private var context
-    @Query private var items: [ReinforcementTimeEvent]
+    @Query(sort: \ReinforcementTimeEvent.date, order: .forward) private var items: [ReinforcementTimeEvent]
     @State private var showSheet = false
     @State private var selectedEvent: ReinforcementTimeEvent?
     @State private var showAlert: Bool = false
     @State private var alertTitle: String = ""
     @State private var alertMessage: String = ""
     let titlePaddingRow: CGFloat = 8.0
+    @State private var timer: Timer?
+    
+    
     
     var body: some View{
         NavigationStack{
@@ -84,88 +87,106 @@ struct EventList: View{
             .alert(isPresented: $showAlert) {
                 Alert(title: Text(alertTitle), message: Text(alertMessage))
             }
+            .onAppear {
+                startTimer()
+            }
+            .onDisappear {
+                timer?.invalidate()
+            }
         }
     }
-    
-    func addToCalander(_ event: ReinforcementTimeEvent) {
-        requestCalendarAccess(CalanderEvent(title: "Reinforcement Time Event",
-                                            date: event.date,
-                                            description: "Mercenary Den needs your help"))
-    }
-    func deleteEvent(_ event: ReinforcementTimeEvent) {
-        context.delete(event)
-    }
-    
-    private func requestCalendarAccess(_ event: CalanderEvent) {
-        let eventStore = EKEventStore()
         
-        eventStore.requestWriteOnlyAccessToEvents() { (granted, error) in
-            if granted && error == nil {
-                let calendarEvent = EKEvent(eventStore: eventStore)
-                calendarEvent.title = event.title
-                calendarEvent.startDate = event.date
-                calendarEvent.endDate = event.date.addingTimeInterval(3600)
-                calendarEvent.notes = event.description
-                calendarEvent.calendar = eventStore.defaultCalendarForNewEvents
-                
-                do {
-                    try eventStore.save(calendarEvent, span: .thisEvent)
-                    alertTitle = "Event Added"
-                    alertMessage = "The event has been successfully added to your calendar."
-                    showAlert = true
-                } catch {
+         func startTimer() {
+            timer = Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { _ in
+                refreshEvents()
+            }
+        }
+        
+         func refreshEvents() {
+            Task { @MainActor in
+                try? context.save() // This will trigger SwiftData to re-evaluate queries
+            }
+        }
+        
+        func addToCalander(_ event: ReinforcementTimeEvent) {
+            requestCalendarAccess(CalanderEvent(title: "Reinforcement Time Event",
+                                                date: event.date,
+                                                description: "Mercenary Den needs your help"))
+        }
+        func deleteEvent(_ event: ReinforcementTimeEvent) {
+            context.delete(event)
+        }
+        
+        private func requestCalendarAccess(_ event: CalanderEvent) {
+            let eventStore = EKEventStore()
+            
+            eventStore.requestWriteOnlyAccessToEvents() { (granted, error) in
+                if granted && error == nil {
+                    let calendarEvent = EKEvent(eventStore: eventStore)
+                    calendarEvent.title = event.title
+                    calendarEvent.startDate = event.date
+                    calendarEvent.endDate = event.date.addingTimeInterval(3600)
+                    calendarEvent.notes = event.description
+                    calendarEvent.calendar = eventStore.defaultCalendarForNewEvents
+                    
+                    do {
+                        try eventStore.save(calendarEvent, span: .thisEvent)
+                        alertTitle = "Event Added"
+                        alertMessage = "The event has been successfully added to your calendar."
+                        showAlert = true
+                    } catch {
+                        alertTitle = "Error"
+                        alertMessage = "There was an error adding the event to your calendar."
+                        showAlert = true
+                    }
+                } else {
                     alertTitle = "Error"
-                    alertMessage = "There was an error adding the event to your calendar."
+                    alertMessage = "Access to the calendar was denied."
                     showAlert = true
                 }
-            } else {
-                alertTitle = "Error"
-                alertMessage = "Access to the calendar was denied."
-                showAlert = true
             }
         }
     }
-}
-
-
-
-struct Preview {
     
-    let modelContainer: ModelContainer
-    init() {
-        let config = ModelConfiguration(isStoredInMemoryOnly: true)
-        do {
-            modelContainer = try ModelContainer(for: ReinforcementTimeEvent.self, configurations: config)
-        } catch {
-            fatalError("Could not initialize ModelContainer")
-        }
-    }
-    func addExamples(_ examples: [ReinforcementTimeEvent]) {
+    
+    
+    struct Preview {
         
-        Task { @MainActor in
-            examples.forEach { example in
-                modelContainer.mainContext.insert(example)
+        let modelContainer: ModelContainer
+        init() {
+            let config = ModelConfiguration(isStoredInMemoryOnly: true)
+            do {
+                modelContainer = try ModelContainer(for: ReinforcementTimeEvent.self, configurations: config)
+            } catch {
+                fatalError("Could not initialize ModelContainer")
             }
+        }
+        func addExamples(_ examples: [ReinforcementTimeEvent]) {
+            
+            Task { @MainActor in
+                examples.forEach { example in
+                    modelContainer.mainContext.insert(example)
+                }
+            }
+            
         }
         
     }
     
-}
-
-extension ReinforcementTimeEvent {
-    static var sampleItems: [ReinforcementTimeEvent] {
-        [
-            ReinforcementTimeEvent(date: Date(), systemName: "Jita", planet: 4, isDefence: true),
-            ReinforcementTimeEvent(date: Date().addingTimeInterval(8000), systemName: "Amarr", planet: 8, isDefence: false)
-        ]
+    extension ReinforcementTimeEvent {
+        static var sampleItems: [ReinforcementTimeEvent] {
+            [
+                ReinforcementTimeEvent(date: Date(), systemName: "Jita", planet: 4, isDefence: true),
+                ReinforcementTimeEvent(date: Date().addingTimeInterval(8000), systemName: "Amarr", planet: 8, isDefence: false)
+            ]
+        }
     }
-}
-
-#Preview {
-    let preview = Preview()
     
-    preview.addExamples(ReinforcementTimeEvent.sampleItems)
-    
-    return EventList()
-        .modelContainer(preview.modelContainer)
-}
+    #Preview {
+        let preview = Preview()
+        
+        preview.addExamples(ReinforcementTimeEvent.sampleItems)
+        
+        return EventList()
+            .modelContainer(preview.modelContainer)
+    }
