@@ -8,12 +8,24 @@
 
 import SwiftUI
 import SwiftData
+import EventKit
+
+fileprivate struct CalanderEvent: Identifiable {
+    let id: UUID = UUID()
+    let title: String
+    let date: Date
+    let description: String
+}
+
 
 struct EventList: View{
     @Environment(\.modelContext) private var context
     @Query private var items: [ReinforcementTimeEvent]
     @State private var showSheet = false
     @State private var selectedEvent: ReinforcementTimeEvent?
+    @State private var showAlert: Bool = false
+    @State private var alertTitle: String = ""
+    @State private var alertMessage: String = ""
     let titlePaddingRow: CGFloat = 8.0
     
     var body: some View{
@@ -32,8 +44,16 @@ struct EventList: View{
                     Text("Actions")
                 }.padding([.top, .leading, .trailing], titlePaddingRow)
                 List(items){
-                    EventRow(event: $0) { item in
-                        selectedEvent = item
+                    EventRow(event: $0) { item, actionType in
+                        switch actionType {
+                        case .edit:
+                            selectedEvent = item
+                        case .addToCalendar:
+                            addToCalander(item)
+                        case .delete:
+                            deleteEvent(item)
+                        }
+                        
                     }
                 }
                 .listStyle(.bordered)
@@ -61,22 +81,91 @@ struct EventList: View{
             .sheet(isPresented: $showSheet) {
                 EventFormView(isVisible: $showSheet, selectedEvent: selectedEvent)
             }
+            .alert(isPresented: $showAlert) {
+                Alert(title: Text(alertTitle), message: Text(alertMessage))
+            }
         }
     }
     
+    func addToCalander(_ event: ReinforcementTimeEvent) {
+        requestCalendarAccess(CalanderEvent(title: "Reinforcement Time Event",
+                                            date: event.date,
+                                            description: "Mercenary Den needs your help"))
+    }
+    func deleteEvent(_ event: ReinforcementTimeEvent) {
+        context.delete(event)
+    }
+    
+    private func requestCalendarAccess(_ event: CalanderEvent) {
+        let eventStore = EKEventStore()
+        
+        eventStore.requestWriteOnlyAccessToEvents() { (granted, error) in
+            if granted && error == nil {
+                let calendarEvent = EKEvent(eventStore: eventStore)
+                calendarEvent.title = event.title
+                calendarEvent.startDate = event.date
+                calendarEvent.endDate = event.date.addingTimeInterval(3600)
+                calendarEvent.notes = event.description
+                calendarEvent.calendar = eventStore.defaultCalendarForNewEvents
+                
+                do {
+                    try eventStore.save(calendarEvent, span: .thisEvent)
+                    alertTitle = "Event Added"
+                    alertMessage = "The event has been successfully added to your calendar."
+                    showAlert = true
+                } catch {
+                    alertTitle = "Error"
+                    alertMessage = "There was an error adding the event to your calendar."
+                    showAlert = true
+                }
+            } else {
+                alertTitle = "Error"
+                alertMessage = "Access to the calendar was denied."
+                showAlert = true
+            }
+        }
+    }
 }
 
 
 
+struct Preview {
+    
+    let modelContainer: ModelContainer
+    init() {
+        let config = ModelConfiguration(isStoredInMemoryOnly: true)
+        do {
+            modelContainer = try ModelContainer(for: ReinforcementTimeEvent.self, configurations: config)
+        } catch {
+            fatalError("Could not initialize ModelContainer")
+        }
+    }
+    func addExamples(_ examples: [ReinforcementTimeEvent]) {
+        
+        Task { @MainActor in
+            examples.forEach { example in
+                modelContainer.mainContext.insert(example)
+            }
+        }
+        
+    }
+    
+}
 
-
+extension ReinforcementTimeEvent {
+    static var sampleItems: [ReinforcementTimeEvent] {
+        [
+            ReinforcementTimeEvent(date: Date(), systemName: "Jita", planet: 4, isDefence: true),
+            ReinforcementTimeEvent(date: Date().addingTimeInterval(8000), systemName: "Amarr", planet: 8, isDefence: false)
+        ]
+    }
+}
 
 #Preview {
-    do {
-        let container = try ModelContainer(for: ReinforcementTimeEvent.self, configurations: .init(isStoredInMemoryOnly: true))
-        return EventList()
-            .modelContainer(container)
-    } catch {
-        return Text("Failed to create preview: \(error.localizedDescription)")
-    }
+    let preview = Preview()
+    
+    preview.addExamples(ReinforcementTimeEvent.sampleItems)
+    
+    return EventList()
+        .modelContainer(preview.modelContainer)
 }

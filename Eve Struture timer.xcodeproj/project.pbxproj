@@ -10,9 +10,22 @@
 		8C28A5D02D7BF9B700205F46 /* Eve Struture timer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Eve Struture timer.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		8C30AB802D926827005E02DB /* Exceptions for "Eve Struture timer" folder in "Eve Struture timer" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				"Eve-Struture-timer-Info.plist",
+			);
+			target = 8C28A5CF2D7BF9B700205F46 /* Eve Struture timer */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		8C28A5D22D7BF9B700205F46 /* Eve Struture timer */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				8C30AB802D926827005E02DB /* Exceptions for "Eve Struture timer" folder in "Eve Struture timer" target */,
+			);
 			path = "Eve Struture timer";
 			sourceTree = "<group>";
 		};
@@ -257,6 +270,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Eve-Struture-timer-Info.plist";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -285,6 +299,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Eve-Struture-timer-Info.plist";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
