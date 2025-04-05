@@ -10,31 +10,6 @@ import SwiftData
 import AppKit
 
 struct EventFormView: View {
-    private enum Constants {
-        static let enterData = "Enter Data"
-        static let systemNamePlaceholder = "Jita"
-        static let systemNameError = "System name must not be empty"
-        static let planetNumberPlaceholder = "8"
-        static let planetNumberError = "Planet number must be a positive integer"
-        static let optionalEventStartPlaceholder = "Optional Event Start Time (HH:mm)"
-        static let optionalEventStartError = "Expected DD:HH:MM or empty"
-        static let timeToAddPlaceholder = "Time to add D:HH:MM"
-        static let timeToAddError = "Expected D:HH:MM"
-        static let invalidEventTimeMessage = "Invalid event time input"
-        static let invalidAddTimeMessage = "Invalid time to add input"
-        static let dateFormatString = "dd/MM/yyyy HH:mm"
-        static let badDate = "Bad date"
-        static let missingPlanetNumber = "Planet Number Missing"
-        static let copyButtonLabel = "Copy"
-        static let cancelButtonLabel = "Cancel"
-        static let saveButtonLabel = "Save"
-        static let timeStartEventValidationPattern = #"^$|^(0?[0-9]|1[0-9]|2[0-3]):([0-5][0-9])$"#
-        static let addTimeValidationPattern = #"^[01]:(\d|0\d|1\d|2[0-3]):(\d|[0-5]\d)$"#
-        static let planetNumberValidationPattern = #"^[1-9]\d*$"#
-        static let systemNameValidationPattern = #"^.+$"#
-        static let defaultPlanetValue: Int8 = 0
-    }
-    
     @Environment(\.modelContext) private var context
     @Binding var isVisible: Bool
     @State private var eventStartTime: String = ""
@@ -42,7 +17,7 @@ struct EventFormView: View {
     @State private var systemName: String = ""
     @State private var planetNumber: String = ""
     @State private var resultText: String = "Enter Data"
-    @State private var calculatedDate: Date?
+    @State private var fromDate: Date?
     @State private var isSystemNameValid: Bool = false
     @State private var isEventStartTimeValid: Bool = true
     @State private var isTimeToAddValid: Bool = false
@@ -62,12 +37,11 @@ struct EventFormView: View {
         if let event = selectedEvent {
             _systemName = State(initialValue: event.systemName)
             _planetNumber = State(initialValue: "\(event.planet)")
-            _calculatedDate = State(initialValue: event.date)
+            _fromDate = State(initialValue: event.createdDate)
             _isDefenseTimer = State(initialValue: event.isDefence)
             
             // Calculate time remaining
-            let now = Date()
-            let remainingTime = event.date.timeIntervalSince(now)
+            let remainingTime = event.remainingTime
             let secondsPerDay = 86_400
             let secondsPerHour = 3_600
             let secondsPerMinutes = 60
@@ -96,15 +70,16 @@ struct EventFormView: View {
                 calculateFutureTime()
             }
         }
-        .frame(width: 300, height: 350)
+        .frame(width: 300, height: 400)
         .padding()
-        
     }
     
     private var inputFields: some View {
-        VStack(alignment: .center) {
+        VStack(alignment: .center, spacing: 4) {
+            
             ValidationTextField(
                 text: $systemName,
+                label: "System Name",
                 isValid: $isSystemNameValid,
                 placeHolder: Constants.systemNamePlaceholder,
                 errorMessage: Constants.systemNameError,
@@ -113,6 +88,7 @@ struct EventFormView: View {
             
             ValidationTextField(
                 text: $planetNumber,
+                label: "Planet Number",
                 isValid: $isPlanetNumberValid,
                 placeHolder: Constants.planetNumberPlaceholder,
                 errorMessage: Constants.planetNumberError,
@@ -121,6 +97,7 @@ struct EventFormView: View {
             
             ValidationTextField(
                 text: $eventStartTime,
+                label: "From Date (optional)",
                 isValid: $isEventStartTimeValid,
                 placeHolder: Constants.optionalEventStartPlaceholder,
                 errorMessage: Constants.optionalEventStartError,
@@ -129,6 +106,7 @@ struct EventFormView: View {
             
             ValidationTextField(
                 text: $timeToAdd,
+                label: "Timer remaining to event",
                 isValid: $isTimeToAddValid,
                 placeHolder: Constants.timeToAddPlaceholder,
                 errorMessage: Constants.timeToAddError,
@@ -138,12 +116,12 @@ struct EventFormView: View {
             Toggle(isOn: $isDefenseTimer) {
                 Text("Is defence timer")
             }
+            .padding(.top, 8)
         }
     }
     
     private var resultView: some View {
         Text(resultText)
-            .padding()
             .font(.title)
             .contextMenu {
                 Button(Constants.copyButtonLabel) {
@@ -172,7 +150,7 @@ struct EventFormView: View {
             return
         }
         
-        guard let date = calculatedDate else {
+        guard let date = fromDate else {
             resultText = Constants.badDate
             return
         }
@@ -183,34 +161,54 @@ struct EventFormView: View {
         else if let existingEvent = fetchEvent(systemName: systemName, planet: planet) {
             updateEvent(existingEvent, with: date)
         } else {
-            createNewEvent(with: date, systemName: systemName, planet: planet)
+            createNewEvent(systemName: systemName,
+                           planet: planet,
+                           date: date,
+                           timeToAdd: timeToAdd,
+                           isDefence: isDefenseTimer)
         }
         
         isVisible = false
     }
     
-    private func updateEvent(_ event: ReinforcementTimeEvent, with date: Date) {
-        event.date = date
-        event.systemName = systemName
-        event.isDefence = isDefenseTimer
-        event.planet = Int8(planetNumber) ?? Constants.defaultPlanetValue
-        saveContext()
-    }
-    
-    private func createNewEvent(with date: Date, systemName: String, planet: Int8) {
-        let newEvent = ReinforcementTimeEvent(date: date, systemName: systemName, planet: planet, isDefence: isDefenseTimer)
-        context.insert(newEvent)
-        saveContext()
-    }
-    
-    private func saveContext() {
-        do {
-            try context.save()
-            print("Event saved successfully!")
-        } catch {
-            print("Failed to save event: \(error)")
+    private func timeInterval(from formattedString: String) -> TimeInterval? {
+        let components = formattedString.split(separator: ":").map { String($0) }
+        
+        guard components.count == 3,
+              let days = Int(components[0]),
+              let hours = Int(components[1]),
+              let minutes = Int(components[2]) else {
+            return nil
         }
+        
+        let totalSeconds = TimeInterval(days * 86_400 + hours * 3_600 + minutes * 60)
+        return totalSeconds
     }
+    
+    private func updateEvent(_ event: ReinforcementTimeEvent, with date: Date) {
+        
+        guard let timeDelta = timeInterval(from: timeToAdd) else {
+            return
+        }
+        context.updateEvent(event,
+                            newSystemName: systemName,
+                            newPlanet: Int8(planetNumber),
+                            newCreatedDate: date,
+                            timeRemaining: timeDelta,
+                            newIsDefence: isDefenseTimer)
+    }
+    
+    private func createNewEvent(systemName: String, planet: Int8, date: Date, timeToAdd: String, isDefence: Bool) {
+        guard let timeTo = timeInterval(from: timeToAdd) else{
+            return
+        }
+        context.addEvent(systemName: systemName,
+                         planet: planet,
+                         createdDate: date,
+                         timeInterval: timeTo,
+                         isDefence: isDefence)
+    }
+    
     
     private func fetchEvent(systemName: String, planet: Int8) -> ReinforcementTimeEvent? {
         let predicate = #Predicate<ReinforcementTimeEvent> { event in
@@ -233,7 +231,7 @@ struct EventFormView: View {
         }
         
         let finalDate = Calendar.current.date(byAdding: timeOffset, to: startDate) ?? startDate
-        calculatedDate = finalDate
+        fromDate = finalDate
         
         resultText = formatDate(finalDate)
     }
@@ -266,6 +264,33 @@ struct EventFormView: View {
         formatter.timeZone = TimeZone(abbreviation: "UTC") //"UTC" will not change not adding to constants
         formatter.dateFormat = Constants.dateFormatString
         return formatter.string(from: date)
+    }
+}
+
+extension EventFormView {
+    private enum Constants {
+        static let enterData = "Enter Information"
+        static let systemNamePlaceholder = "Jita"
+        static let systemNameError = "System name must not be empty"
+        static let planetNumberPlaceholder = "8"
+        static let planetNumberError = "Planet number must be a positive integer"
+        static let optionalEventStartPlaceholder = "Optional Event Start Time (HH:mm)"
+        static let optionalEventStartError = "Expected DD:HH:MM or empty"
+        static let timeToAddPlaceholder = "Time to add D:HH:MM"
+        static let timeToAddError = "Expected D:HH:MM"
+        static let invalidEventTimeMessage = "Invalid event time input"
+        static let invalidAddTimeMessage = "Invalid time to add input"
+        static let dateFormatString = "dd/MM/yyyy HH:mm"
+        static let badDate = "Bad date"
+        static let missingPlanetNumber = "Planet Number Missing"
+        static let copyButtonLabel = "Copy"
+        static let cancelButtonLabel = "Cancel"
+        static let saveButtonLabel = "Save"
+        static let timeStartEventValidationPattern = #"^$|^(0?[0-9]|1[0-9]|2[0-3]):([0-5][0-9])$"#
+        static let addTimeValidationPattern = #"^[01]:(\d|0\d|1\d|2[0-3]):(\d|[0-5]\d)$"#
+        static let planetNumberValidationPattern = #"^[1-9]\d*$"#
+        static let systemNameValidationPattern = #"^.+$"#
+        static let defaultPlanetValue: Int8 = 0
     }
 }
 

@@ -36,12 +36,14 @@ struct ValidationTextField: View {
     @Binding var isValid: Bool
     let placeHolder: String
     let errorMessage: String
+    let label: String?
     private let validator: Validator
     @State private var attempts = 0
     @FocusState private var isTextFieldFocused: Bool
 
-    init(text: Binding<String>, isValid: Binding<Bool>, placeHolder: String, errorMessage: String, validator: Validator) {
+    init(text: Binding<String>, label: String? = nil, isValid: Binding<Bool>, placeHolder: String, errorMessage: String, validator: Validator) {
         self._text = text
+        self.label = label
         self._isValid = isValid
         self.placeHolder = placeHolder
         self.errorMessage = errorMessage
@@ -51,6 +53,11 @@ struct ValidationTextField: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
+            if let label, !label.isEmpty{
+                Text(label)
+                    .font(.headline)
+            }
+                
             TextField(placeHolder, text: $text)
                 .textFieldStyle(RoundedBorderTextFieldStyle())
                 .overlay(
@@ -76,6 +83,7 @@ struct ValidationTextField: View {
                 .font(.caption)
                 .foregroundColor(.red)
                 .padding(.leading, 5)
+            
         }
         .padding(.horizontal)
     }
@@ -107,6 +115,7 @@ struct Shake: GeometryEffect {
 
         ValidationTextField(
             text: .constant("TEXT"),
+            label: "Time",
             isValid: .constant(false),
             placeHolder: "Enter time (DD:HH:MM)",
             errorMessage: "Invalid format. Expected DD:HH:MM",

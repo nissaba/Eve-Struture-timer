@@ -20,7 +20,7 @@ fileprivate struct CalanderEvent: Identifiable {
 
 struct EventList: View{
     @Environment(\.modelContext) private var context
-    @Query(sort: \ReinforcementTimeEvent.date, order: .forward) private var items: [ReinforcementTimeEvent]
+    @Query(sort: \ReinforcementTimeEvent.dueDate, order: .forward) private var items: [ReinforcementTimeEvent]
     @State private var showSheet = false
     @State private var selectedEvent: ReinforcementTimeEvent?
     @State private var showAlert: Bool = false
@@ -110,7 +110,7 @@ struct EventList: View{
         
         func addToCalander(_ event: ReinforcementTimeEvent) {
             requestCalendarAccess(CalanderEvent(title: "Reinforcement Time Event",
-                                                date: event.date,
+                                                date: event.dueDate,
                                                 description: "Mercenary Den needs your help"))
         }
         func deleteEvent(_ event: ReinforcementTimeEvent) {
@@ -176,8 +176,8 @@ struct EventList: View{
     extension ReinforcementTimeEvent {
         static var sampleItems: [ReinforcementTimeEvent] {
             [
-                ReinforcementTimeEvent(date: Date(), systemName: "Jita", planet: 4, isDefence: true),
-                ReinforcementTimeEvent(date: Date().addingTimeInterval(8000), systemName: "Amarr", planet: 8, isDefence: false)
+                ReinforcementTimeEvent(createdDate: Date(), dueDate: Date.init(timeIntervalSinceNow: 43234), systemName: "Jita", planet: 4, isDefence: true),
+                ReinforcementTimeEvent(createdDate: Date(), dueDate: Date.init(timeIntervalSinceNow: 23442), systemName: "Amarr", planet: 8, isDefence: false)
             ]
         }
     }
