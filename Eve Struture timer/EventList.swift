@@ -10,31 +10,46 @@ import SwiftUI
 import SwiftData
 import EventKit
 
-fileprivate struct CalanderEvent: Identifiable {
+/// A simple struct representing an event to be added to the calendar.
+fileprivate struct CalendarEvent: Identifiable {
     let id: UUID = UUID()
     let title: String
     let date: Date
     let description: String
 }
 
-
-struct EventList: View{
+/// The main view displaying a list of reinforcement events and allowing actions on them.
+struct EventList: View {
     @Environment(\.modelContext) private var context
+
+    /// The list of reinforcement time events fetched via SwiftData.
     @Query(sort: \ReinforcementTimeEvent.dueDate, order: .forward) private var items: [ReinforcementTimeEvent]
+
+    /// Whether the sheet for adding/editing an event is shown.
     @State private var showSheet = false
+
+    /// The event currently selected for editing.
     @State private var selectedEvent: ReinforcementTimeEvent?
-    @State private var showAlert: Bool = false
-    @State private var alertTitle: String = ""
-    @State private var alertMessage: String = ""
-    let titlePaddingRow: CGFloat = 8.0
+
+    /// Whether the alert is currently visible.
+    @State private var showAlert = false
+
+    /// The title for the alert dialog.
+    @State private var alertTitle = ""
+
+    /// The message for the alert dialog.
+    @State private var alertMessage = ""
+
+    /// Timer to refresh events every 60 seconds.
     @State private var timer: Timer?
-    
-    
-    
-    var body: some View{
-        NavigationStack{
-            VStack(alignment: .leading){
-                HStack(alignment: .bottom){
+
+    /// Padding for the row title section.
+    let titlePaddingRow: CGFloat = 8.0
+
+    var body: some View {
+        NavigationStack {
+            VStack(alignment: .leading) {
+                HStack(alignment: .bottom) {
                     Text("System")
                         .frame(maxWidth: .infinity, alignment: .leading)
                     Text("Planet")
@@ -45,18 +60,19 @@ struct EventList: View{
                         .frame(maxWidth: .infinity, alignment: .leading)
                     Spacer()
                     Text("Actions")
-                }.padding([.top, .leading, .trailing], titlePaddingRow)
-                List(items){
-                    EventRow(event: $0) { item, actionType in
+                }
+                .padding([.top, .leading, .trailing], titlePaddingRow)
+
+                List(items) { item in
+                    EventRow(event: item) { item, actionType in
                         switch actionType {
                         case .edit:
                             selectedEvent = item
                         case .addToCalendar:
-                            addToCalander(item)
+                            addToCalendar(item)
                         case .delete:
                             deleteEvent(item)
                         }
-                        
                     }
                 }
                 .listStyle(.bordered)
@@ -76,11 +92,11 @@ struct EventList: View{
                     showSheet = true
                 }
             }
-            .onChange(of: showSheet, { oldValeu , newValue in
-                if newValue == false {
+            .onChange(of: showSheet) { _, newValue in
+                if !newValue {
                     selectedEvent = nil
                 }
-            })
+            }
             .sheet(isPresented: $showSheet) {
                 EventFormView(isVisible: $showSheet, selectedEvent: selectedEvent)
             }
@@ -95,60 +111,71 @@ struct EventList: View{
             }
         }
     }
-        
-         func startTimer() {
-            timer = Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { _ in
-                refreshEvents()
-            }
+
+    /// Starts a timer to refresh events every 60 seconds.
+    func startTimer() {
+        timer = Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { _ in
+            refreshEvents()
         }
-        
-         func refreshEvents() {
-            Task { @MainActor in
-                try? context.save() // This will trigger SwiftData to re-evaluate queries
-            }
+    }
+
+    /// Forces SwiftData to re-evaluate queries and refresh the list.
+    func refreshEvents() {
+        Task { @MainActor in
+            try? context.save()
         }
-        
-        func addToCalander(_ event: ReinforcementTimeEvent) {
-            requestCalendarAccess(CalanderEvent(title: "Reinforcement Time Event",
-                                                date: event.dueDate,
-                                                description: "Mercenary Den needs your help"))
-        }
-        func deleteEvent(_ event: ReinforcementTimeEvent) {
-            context.delete(event)
-        }
-        
-        private func requestCalendarAccess(_ event: CalanderEvent) {
-            let eventStore = EKEventStore()
-            
-            eventStore.requestWriteOnlyAccessToEvents() { (granted, error) in
-                if granted && error == nil {
-                    let calendarEvent = EKEvent(eventStore: eventStore)
-                    calendarEvent.title = event.title
-                    calendarEvent.startDate = event.date
-                    calendarEvent.endDate = event.date.addingTimeInterval(3600)
-                    calendarEvent.notes = event.description
-                    calendarEvent.calendar = eventStore.defaultCalendarForNewEvents
-                    
-                    do {
-                        try eventStore.save(calendarEvent, span: .thisEvent)
-                        alertTitle = "Event Added"
-                        alertMessage = "The event has been successfully added to your calendar."
-                        showAlert = true
-                    } catch {
-                        alertTitle = "Error"
-                        alertMessage = "There was an error adding the event to your calendar."
-                        showAlert = true
-                    }
-                } else {
+    }
+
+    /// Prepares and requests calendar access to add a `ReinforcementTimeEvent`.
+    /// - Parameter event: The event to be added.
+    func addToCalendar(_ event: ReinforcementTimeEvent) {
+        requestCalendarAccess(
+            CalendarEvent(
+                title: "Reinforcement Time Event",
+                date: event.dueDate,
+                description: "Mercenary Den needs your help"
+            )
+        )
+    }
+
+    /// Deletes a `ReinforcementTimeEvent` from the context.
+    /// - Parameter event: The event to delete.
+    func deleteEvent(_ event: ReinforcementTimeEvent) {
+        context.delete(event)
+    }
+
+    /// Requests access to the user's calendar and adds the provided event.
+    /// - Parameter event: The `CalendarEvent` to add to the default calendar.
+    private func requestCalendarAccess(_ event: CalendarEvent) {
+        let eventStore = EKEventStore()
+
+        eventStore.requestWriteOnlyAccessToEvents { granted, error in
+            if granted && error == nil {
+                let calendarEvent = EKEvent(eventStore: eventStore)
+                calendarEvent.title = event.title
+                calendarEvent.startDate = event.date
+                calendarEvent.endDate = event.date.addingTimeInterval(3600)
+                calendarEvent.notes = event.description
+                calendarEvent.calendar = eventStore.defaultCalendarForNewEvents
+
+                do {
+                    try eventStore.save(calendarEvent, span: .thisEvent)
+                    alertTitle = "Event Added"
+                    alertMessage = "The event has been successfully added to your calendar."
+                    showAlert = true
+                } catch {
                     alertTitle = "Error"
-                    alertMessage = "Access to the calendar was denied."
+                    alertMessage = "There was an error adding the event to your calendar."
                     showAlert = true
                 }
+            } else {
+                alertTitle = "Error"
+                alertMessage = "Access to the calendar was denied."
+                showAlert = true
             }
         }
     }
-    
-    
+}
     
     struct Preview {
         
