@@ -28,3 +28,26 @@ extension FocusedValues {
         set { self[ShowSheetKey.self] = newValue }
     }
 }
+
+
+struct SelectedEventKey: FocusedValueKey {
+    typealias Value = Binding<ReinforcementTimeEvent?>
+}
+
+extension FocusedValues {
+    var selectedEvent: Binding<ReinforcementTimeEvent?>? {
+        get { self[SelectedEventKey.self] }
+        set { self[SelectedEventKey.self] = newValue }
+    }
+}
+
+struct DeleteRequestKey: FocusedValueKey {
+    typealias Value = Binding<Bool>
+}
+
+extension FocusedValues {
+    var deleteRequested: Binding<Bool>? {
+        get { self[DeleteRequestKey.self] }
+        set { self[DeleteRequestKey.self] = newValue }
+    }
+}

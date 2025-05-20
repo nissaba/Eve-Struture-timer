@@ -8,89 +8,76 @@
 import SwiftUI
 import SwiftData
 
-/// Represents the possible user actions on a reinforcement time event row.
-enum EventRowActionEnum {
-    case edit
-    case addToCalendar
-    case delete
-}
-
-/// A single row view that displays a reinforcement event and presents a contextual menu for actions.
-///
-/// This view displays the system name, planet number, and both UTC and local due dates of a `ReinforcementTimeEvent`.
-/// It also provides a menu to trigger `edit`, `add to calendar`, and `delete` actions.
-///
-/// - Parameters:
-///   - event: The `ReinforcementTimeEvent` instance to display.
-///   - itemSelected: A closure that is called when a user selects an action from the row's menu.
-///     It provides the selected event and the chosen `EventRowActionEnum`.
 struct EventRow: View {
     let event: ReinforcementTimeEvent
-    var itemSelected: (_ item: ReinforcementTimeEvent, _ actionType: EventRowActionEnum) -> Void
-
+    @Binding var selectedEvent: ReinforcementTimeEvent?
+    
     var body: some View {
-        HStack {
-            Text(event.systemName)
-                .strikethrough(event.isPastDue, color: .red)
-                .frame(maxWidth: .infinity, alignment: .leading)
+        
+        ZStack() {
+            RoundedRectangle(cornerRadius: 10)
+                .fill(selectedEvent?.id == event.id ? Color.accentColor.opacity(0.15) : Color.clear)
             
-            Text("\(event.planet)")
-                .frame(maxWidth: .infinity, alignment: .leading)
-            
-            Text(formattedDate(date: event.dueDate))
-                .frame(maxWidth: .infinity, alignment: .leading)
-            
-            Text(formattedLocalDate(date: event.dueDate))
-                .frame(maxWidth: .infinity, alignment: .leading)
-            
-            Spacer()
-            
-            Menu {
-                Button(action: { itemSelected(event, .edit) }) {
-                    Text("Edit")
+            Grid(horizontalSpacing: 16, verticalSpacing: 8) {
+                GridRow {
+                    LabeledValueRow(label: "System:", value: event.systemName).frame(minWidth: 120, alignment: .leading)
+                    LabeledValueRow(label: "Local Time:", value: formattedLocalDate(date: event.dueDate)).frame(minWidth: 120, alignment: .leading).strikethrough(event.isPastDue, pattern: .solid)
+                    
                 }
-                .buttonStyle(BorderlessButtonStyle())
-                
-                Button(action: { itemSelected(event, .addToCalendar) }) {
-                    Text("Add to Calendar")
+                GridRow {
+                    LabeledValueRow(label: "Planet:", value: "\(event.planet)").frame(minWidth: 120, alignment: .leading)
+                    LabeledValueRow(label: "EVE Time:", value: formattedDate(date: event.dueDate)).frame(minWidth: 120, alignment: .leading).strikethrough(event.isPastDue, pattern: .solid)
+                    
+                    
                 }
-                
-                Button(action: { itemSelected(event, .delete) }) {
-                    Text("Delete")
-                }
-                .buttonStyle(BorderlessButtonStyle())
-            } label: {
-                Image(systemName: "ellipsis.circle")
-                    .font(.title2)
-                    .foregroundColor(.primary)
             }
-            .buttonStyle(.plain)
-            .frame(alignment: .center)
+            .gridColumnAlignment(.leading)
             .padding(.horizontal)
+            
         }
+        .contentShape(Rectangle()) // 🟢 Makes whole cell respond to clicks
+        .onTapGesture {
+            selectedEvent = event // 🟢 Set selection on tap
+        }
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(.ultraThinMaterial)
+                .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
+        )
+        .frame(minWidth: 384)
         .foregroundColor(event.isDefence ? Color.red : Color.orange)
     }
 }
 
-/// Formats a given date to a string using UTC time zone.
-///
-/// - Parameter date: The `Date` to format.
-/// - Returns: A string representation in `"dd/MM/yyyy HH:mm"` format.
 fileprivate func formattedDate(date: Date) -> String {
-    let dateFormatter = DateFormatter()
-    dateFormatter.timeZone = TimeZone(abbreviation: "UTC")
-    dateFormatter.dateFormat = "dd/MM/yyyy HH:mm"
-    return dateFormatter.string(from: date)
+    let formatter = DateFormatter()
+    formatter.timeZone = TimeZone(abbreviation: "UTC")
+    formatter.dateFormat = "dd/MM/yyyy HH:mm"
+    return formatter.string(from: date)
 }
 
-/// Formats a given date to a string using the device’s local time zone.
-///
-/// - Parameter date: The `Date` to format.
-/// - Returns: A string representation in `"dd/MM/yyyy HH:mm"` format.
 fileprivate func formattedLocalDate(date: Date) -> String {
-    let dateFormatter = DateFormatter()
-    dateFormatter.timeZone = TimeZone.current
-    dateFormatter.dateFormat = "dd/MM/yyyy HH:mm"
-    return dateFormatter.string(from: date)
+    let formatter = DateFormatter()
+    formatter.timeZone = .current
+    formatter.dateFormat = "dd/MM/yyyy HH:mm"
+    return formatter.string(from: date)
 }
 
+#Preview {
+    struct PreviewWrapper: View {
+        @State private var selected: ReinforcementTimeEvent? = nil
+        
+        var body: some View {
+            let event = ReinforcementTimeEvent(
+                dueDate: Date().addingTimeInterval(3600 * 24),
+                systemName: "Jita",
+                planet: 4,
+                isDefence: false
+            )
+            
+            return EventRow(event: event, selectedEvent: $selected)
+        }
+    }
+    
+    return PreviewWrapper()
+}

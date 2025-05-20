@@ -8,6 +8,7 @@
 
 import SwiftUI
 import SwiftData
+import EventKit
 
 /// Represents a reinforcement event with a scheduled date, system location, and event type.
 @Model
@@ -27,7 +28,7 @@ class ReinforcementTimeEvent: Identifiable {
     
     /// A flag indicating whether this is a defensive event (`true`) or an offensive event (`false`).
     var isDefence: Bool
-
+    
     /// Initializes a new reinforcement time event.
     /// - Parameters:
     ///   - createdDate: The date when the event is scheduled (defaults to now).
@@ -42,13 +43,13 @@ class ReinforcementTimeEvent: Identifiable {
         self.planet = planet
         self.isDefence = isDefence
     }
-
+    
     /// The remaining time until the event happens.
     /// - Returns: The time interval between now and the due date. If negative, the event is past due.
     var remainingTime: TimeInterval {
         return dueDate.timeIntervalSinceNow
     }
-
+    
     /// A formatted string representation of the event's creation date.
     ///
     /// - Returns: A string formatted as `"dd/MM/yyyy HH:mm"` (e.g., `"04/04/2025 14:30"`).
@@ -62,5 +63,44 @@ class ReinforcementTimeEvent: Identifiable {
     /// - Returns: `true` if the event's due date is in the past, otherwise `false`.
     var isPastDue: Bool {
         return remainingTime < 0
+    }
+    
+    func addToCalendar() {
+        let store = EKEventStore()
+
+        if #available(macOS 14, iOS 17, *) {
+            Task {
+                do {
+                    try await store.requestFullAccessToEvents()
+                    createEvent(using: store)
+                } catch {
+                    print("Calendar access denied: \(error)")
+                }
+            }
+        } else {
+            store.requestAccess(to: .event) { [unowned self] granted, error in
+                if granted {
+                    createEvent(using: store)
+                } else {
+                    print("Calendar access denied: \(error?.localizedDescription ?? "unknown error")")
+                }
+            }
+        }
+    }
+
+    private func createEvent(using store: EKEventStore) {
+        let event = EKEvent(eventStore: store)
+        event.title = "Reinforcement: \(self.systemName)"
+        event.startDate = self.dueDate
+        event.endDate = self.dueDate.addingTimeInterval(15 * 60)
+        event.notes = "Planet \(self.planet)"
+        event.calendar = store.defaultCalendarForNewEvents
+
+        do {
+            try store.save(event, span: .thisEvent)
+            print("Event added to calendar.")
+        } catch {
+            print("Failed to save event: \(error)")
+        }
     }
 }

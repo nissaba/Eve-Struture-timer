@@ -14,17 +14,17 @@ import AppKit
 /// and a timer offset to calculate the final event time.
 struct EventFormView: View {
     // MARK: - Environment
-
+    
     /// The model context used to interact with SwiftData.
     @Environment(\.modelContext) private var context
-
+    
     // MARK: - Bindings
-
+    
     /// Controls whether this form is visible.
     @Binding var isVisible: Bool
-
+    
     // MARK: - State
-
+    
     @State private var eventStartTime: String = ""
     @State private var timeToAdd: String = ""
     @State private var systemName: String = ""
@@ -36,33 +36,34 @@ struct EventFormView: View {
     @State private var isTimeToAddValid: Bool = false
     @State private var isPlanetNumberValid: Bool = false
     @State private var isDefenseTimer: Bool = false
-
+    
     /// An optional event used when editing an existing event.
     var editingEvent: ReinforcementTimeEvent?
-
+    @State private var selectedEvent: ReinforcementTimeEvent?
+    
     /// Returns `true` if all user inputs are valid.
     var isAllValid: Bool {
         print(" isSystemNameValid: \(isSystemNameValid)\n isPlanetNumberValid: \(isPlanetNumberValid)\n isEventStartTimeValid: \(isEventStartTimeValid)\n isTimeToAddValid: \(isTimeToAddValid)\n")
         return isSystemNameValid && isEventStartTimeValid && isTimeToAddValid && isPlanetNumberValid
     }
-
+    
     // MARK: - Initializer
-
+    
     init(isVisible: Binding<Bool>, selectedEvent: ReinforcementTimeEvent? = nil) {
         _isVisible = isVisible
         self.editingEvent = selectedEvent
-
+        
         if let event = selectedEvent {
             _systemName = State(initialValue: event.systemName)
             _planetNumber = State(initialValue: "\(event.planet)")
             _fromDate = State(initialValue: event.createdDate)
             _isDefenseTimer = State(initialValue: event.isDefence)
-
+            
             let remainingTime = event.remainingTime
             let secondsPerDay = 86_400
             let secondsPerHour = 3_600
             let secondsPerMinutes = 60
-
+            
             if remainingTime > 0 {
                 let days = Int(remainingTime) / secondsPerDay
                 let hours = (Int(remainingTime) % secondsPerDay) / secondsPerHour
@@ -74,9 +75,9 @@ struct EventFormView: View {
             }
         }
     }
-
+    
     // MARK: - View Body
-
+    
     var body: some View {
         VStack {
             inputFields
@@ -91,7 +92,7 @@ struct EventFormView: View {
         .frame(width: 300, height: 400)
         .padding()
     }
-
+    
     /// Input fields for system name, planet number, event time and duration.
     private var inputFields: some View {
         VStack(alignment: .center, spacing: 4) {
@@ -103,7 +104,7 @@ struct EventFormView: View {
                 errorMessage: Constants.systemNameError,
                 validator: RegexValidator(pattern: Constants.systemNameValidationPattern)
             )
-
+            
             ValidationTextField(
                 text: $planetNumber,
                 label: "Planet Number",
@@ -112,7 +113,7 @@ struct EventFormView: View {
                 errorMessage: Constants.planetNumberError,
                 validator: RegexValidator(pattern: Constants.planetNumberValidationPattern)
             )
-
+            
             ValidationTextField(
                 text: $eventStartTime,
                 label: "From Date (optional)",
@@ -121,7 +122,7 @@ struct EventFormView: View {
                 errorMessage: Constants.optionalEventStartError,
                 validator: RegexValidator(pattern: Constants.timeStartEventValidationPattern)
             )
-
+            
             ValidationTextField(
                 text: $timeToAdd,
                 label: "Timer remaining to event",
@@ -130,14 +131,14 @@ struct EventFormView: View {
                 errorMessage: Constants.timeToAddError,
                 validator: RegexValidator(pattern: Constants.addTimeValidationPattern)
             )
-
+            
             Toggle(isOn: $isDefenseTimer) {
                 Text("Is defence timer")
             }
             .padding(.top, 8)
         }
     }
-
+    
     /// Displays the computed future date.
     private var resultView: some View {
         Text(resultText)
@@ -150,7 +151,7 @@ struct EventFormView: View {
                 }
             }
     }
-
+    
     /// Action buttons to save or cancel the form.
     private var actionButtons: some View {
         HStack {
@@ -160,24 +161,24 @@ struct EventFormView: View {
             Spacer()
         }
     }
-
+    
     /// Dismisses the form.
     private func cancelAction(){
         isVisible = false
     }
-
+    
     /// Validates inputs and saves or updates the event.
     private func saveEvent() {
         guard let planet = Int8(planetNumber) else {
             resultText = Constants.missingPlanetNumber
             return
         }
-
+        
         guard let date = fromDate else {
             resultText = Constants.badDate
             return
         }
-
+        
         if let event = editingEvent {
             updateEvent(event, with: date)
         }
@@ -190,10 +191,10 @@ struct EventFormView: View {
                            timeToAdd: timeToAdd,
                            isDefence: isDefenseTimer)
         }
-
+        
         isVisible = false
     }
-
+    
     /// Parses a "D:HH:MM" string into a `TimeInterval`.
     private func timeInterval(from formattedString: String) -> TimeInterval? {
         let components = formattedString.split(separator: ":").map { String($0) }
@@ -205,7 +206,7 @@ struct EventFormView: View {
         }
         return TimeInterval(days * 86_400 + hours * 3_600 + minutes * 60)
     }
-
+    
     /// Updates an existing event with new values.
     private func updateEvent(_ event: ReinforcementTimeEvent, with date: Date) {
         guard let timeDelta = timeInterval(from: timeToAdd) else { return }
@@ -216,7 +217,7 @@ struct EventFormView: View {
                             timeRemaining: timeDelta,
                             newIsDefence: isDefenseTimer)
     }
-
+    
     /// Creates a new event.
     private func createNewEvent(systemName: String, planet: Int8, date: Date, timeToAdd: String, isDefence: Bool) {
         guard let timeTo = timeInterval(from: timeToAdd) else { return }
@@ -226,7 +227,7 @@ struct EventFormView: View {
                          timeInterval: timeTo,
                          isDefence: isDefence)
     }
-
+    
     /// Fetches an existing event by system name and planet number.
     private func fetchEvent(systemName: String, planet: Int8) -> ReinforcementTimeEvent? {
         let predicate = #Predicate<ReinforcementTimeEvent> { event in
@@ -235,7 +236,7 @@ struct EventFormView: View {
         let fetchDescriptor = FetchDescriptor<ReinforcementTimeEvent>(predicate: predicate)
         return try? context.fetch(fetchDescriptor).first
     }
-
+    
     /// Calculates the final event date by adding the offset to the start date.
     private func calculateFutureTime() {
         guard let startDate = createStartDate() else {
@@ -246,31 +247,38 @@ struct EventFormView: View {
             resultText = Constants.invalidAddTimeMessage
             return
         }
-        let finalDate = Calendar.current.date(byAdding: timeOffset, to: startDate) ?? startDate
+        let finalDate = startDate.addingTimeInterval(timeOffset)
         fromDate = finalDate
         resultText = formatDate(finalDate)
     }
-
+    
     /// Builds a date from the current day and the optional input time.
     private func createStartDate() -> Date? {
         let calendar = Calendar.current
         let currentDate = Date()
         let eventComponents = eventStartTime.split(separator: ":").compactMap { Int($0) }
         var components = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: currentDate)
-        if eventComponents.count == 2 {
-            components.hour = eventComponents.first
-            components.minute = eventComponents.last
-        }
+        
+        guard eventComponents.count == 2 else { return currentDate}
+        
+        components.hour = eventComponents.first
+        components.minute = eventComponents.last
+        
         return calendar.date(from: components)
     }
-
-    /// Parses the D:HH:MM string into `DateComponents`.
-    private func parseTimeOffset() -> DateComponents? {
+    
+    /// Parses the D:HH:MM string into `TimeInterval`.
+    private func parseTimeOffset() -> TimeInterval? {
         let timeComponents = timeToAdd.split(separator: ":").compactMap { Int($0) }
         guard timeComponents.count == 3 else { return nil }
-        return DateComponents(day: timeComponents[0], hour: timeComponents[1], minute: timeComponents[2])
-    }
 
+        let days = timeComponents[0]
+        let hours = timeComponents[1]
+        let minutes = timeComponents[2]
+
+        return TimeInterval(days * 86400 + hours * 3600 + minutes * 60)
+    }
+    
     /// Formats a `Date` into a UTC string.
     private func formatDate(_ date: Date) -> String {
         let formatter = DateFormatter()

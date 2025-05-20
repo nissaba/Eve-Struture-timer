@@ -1,219 +1,110 @@
-//
-//  EventList.swift
-//  Eve Struture timer
-//
-//  Created by Pascale on 2025-03-07.
-//
-
-
 import SwiftUI
 import SwiftData
-import EventKit
 
-/// A simple struct representing an event to be added to the calendar.
-fileprivate struct CalendarEvent: Identifiable {
-    let id: UUID = UUID()
-    let title: String
-    let date: Date
-    let description: String
-}
-
-/// The main view displaying a list of reinforcement events and allowing actions on them.
 struct EventList: View {
     @Environment(\.modelContext) private var context
-
-    /// The list of reinforcement time events fetched via SwiftData.
-    @Query(sort: \ReinforcementTimeEvent.dueDate, order: .forward) private var items: [ReinforcementTimeEvent]
-
-    /// Whether the sheet for adding/editing an event is shown.
-    @State private var showSheet = false
-
-    /// The event currently selected for editing.
-    @State private var selectedEvent: ReinforcementTimeEvent?
-
-    /// Whether the alert is currently visible.
-    @State private var showAlert = false
-
-    /// The title for the alert dialog.
-    @State private var alertTitle = ""
-
-    /// The message for the alert dialog.
-    @State private var alertMessage = ""
-
-    /// Timer to refresh events every 60 seconds.
-    @State private var timer: Timer?
-
-    /// Padding for the row title section.
-    let titlePaddingRow: CGFloat = 8.0
-
+    @EnvironmentObject var selectionModel: SelectionModel
+    @Query(sort: \ReinforcementTimeEvent.dueDate) var events: [ReinforcementTimeEvent]
+    @Environment(\.colorScheme) var colorScheme
+    @State private var now = Date()
+    @State private var selected: ReinforcementTimeEvent? = nil
+    @State private var showForm = false
+    @State private var deleteRequested = false
+    
     var body: some View {
         NavigationStack {
-            VStack(alignment: .leading) {
-                HStack(alignment: .bottom) {
-                    Text("System")
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    Text("Planet")
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    Text("Eve Time")
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    Text("Local Time")
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    Spacer()
-                    Text("Actions")
-                }
-                .padding([.top, .leading, .trailing], titlePaddingRow)
-
-                List(items) { item in
-                    EventRow(event: item) { item, actionType in
-                        switch actionType {
-                        case .edit:
-                            selectedEvent = item
-                        case .addToCalendar:
-                            addToCalendar(item)
-                        case .delete:
-                            deleteEvent(item)
-                        }
+            ScrollView {
+                LazyVStack(spacing: 12) {
+                    let eventsSnapshot = events
+                    ForEach(eventsSnapshot, id: \.self) { event in
+                        eventCell(for: event)
                     }
                 }
-                .listStyle(.bordered)
+                .padding(.top)
+                .padding(.horizontal)
             }
-            .frame(width: 400, height: 500)
-            .focusedSceneValue(\.showSheet, $showSheet)
-            .navigationTitle("Event List")
-            .toolbar {
-                ToolbarItem(placement: .automatic) {
-                    Button(action: { showSheet.toggle() }) {
-                        Label("Add Event", systemImage: "plus")
-                    }
-                }
-            }
-            .onChange(of: selectedEvent) { _, newValue in
-                if newValue != nil {
-                    showSheet = true
-                }
-            }
-            .onChange(of: showSheet) { _, newValue in
-                if !newValue {
-                    selectedEvent = nil
-                }
-            }
-            .sheet(isPresented: $showSheet) {
-                EventFormView(isVisible: $showSheet, selectedEvent: selectedEvent)
-            }
-            .alert(isPresented: $showAlert) {
-                Alert(title: Text(alertTitle), message: Text(alertMessage))
-            }
-            .onAppear {
-                startTimer()
-            }
-            .onDisappear {
-                timer?.invalidate()
-            }
-        }
-    }
-
-    /// Starts a timer to refresh events every 60 seconds.
-    func startTimer() {
-        timer = Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { _ in
-            refreshEvents()
-        }
-    }
-
-    /// Forces SwiftData to re-evaluate queries and refresh the list.
-    func refreshEvents() {
-        Task { @MainActor in
-            try? context.save()
-        }
-    }
-
-    /// Prepares and requests calendar access to add a `ReinforcementTimeEvent`.
-    /// - Parameter event: The event to be added.
-    func addToCalendar(_ event: ReinforcementTimeEvent) {
-        requestCalendarAccess(
-            CalendarEvent(
-                title: "Reinforcement Time Event",
-                date: event.dueDate,
-                description: "Mercenary Den needs your help"
+            .background(
+                colorScheme == .dark ? Color.black.opacity(0.3) : Color.white.opacity(0.6)
             )
-        )
-    }
-
-    /// Deletes a `ReinforcementTimeEvent` from the context.
-    /// - Parameter event: The event to delete.
-    func deleteEvent(_ event: ReinforcementTimeEvent) {
-        context.delete(event)
-    }
-
-    /// Requests access to the user's calendar and adds the provided event.
-    /// - Parameter event: The `CalendarEvent` to add to the default calendar.
-    private func requestCalendarAccess(_ event: CalendarEvent) {
-        let eventStore = EKEventStore()
-
-        eventStore.requestWriteOnlyAccessToEvents { granted, error in
-            if granted && error == nil {
-                let calendarEvent = EKEvent(eventStore: eventStore)
-                calendarEvent.title = event.title
-                calendarEvent.startDate = event.date
-                calendarEvent.endDate = event.date.addingTimeInterval(3600)
-                calendarEvent.notes = event.description
-                calendarEvent.calendar = eventStore.defaultCalendarForNewEvents
-
-                do {
-                    try eventStore.save(calendarEvent, span: .thisEvent)
-                    alertTitle = "Event Added"
-                    alertMessage = "The event has been successfully added to your calendar."
-                    showAlert = true
-                } catch {
-                    alertTitle = "Error"
-                    alertMessage = "There was an error adding the event to your calendar."
-                    showAlert = true
+            .navigationTitle("Reinforcement Timers")
+            .toolbar {
+                Button {
+                    showForm = true
+                } label: {
+                    Label("Add Event", systemImage: "plus")
                 }
-            } else {
-                alertTitle = "Error"
-                alertMessage = "Access to the calendar was denied."
-                showAlert = true
+            }
+            .sheet(isPresented: $showForm) {
+                EventFormView(isVisible: $showForm, selectedEvent: selected)
+            }
+            .onReceive(Timer.publish(every: 60, on: .main, in: .common).autoconnect()) { newDate in
+                now = newDate
+            }
+            .onChange(of: selected) { old, new in
+                print("Selection changed: \(String(describing: new?.systemName))")
+            }
+            .onChange(of: deleteRequested) { _, newValue in
+                guard newValue == true, let event = selected else { return }
+                context.deleteEvent(event)
+                selected = nil
+                deleteRequested = false
+            }
+            .onAppear(){
+                selectionModel.persistence = context
             }
         }
+        .focusedSceneValue(\.selectedEvent, $selected)
+        .focusedSceneValue(\.showSheet, $showForm)
+        .focusedSceneValue(\.deleteRequested, $deleteRequested)
+        
+    }
+    
+    @ViewBuilder
+    private func eventCell(for event: ReinforcementTimeEvent) -> some View {
+        EventRow(event: event, selectedEvent: $selected)
+            .contentShape(Rectangle())
+            .onTapGesture {
+                selected = event
+            }
+            .contextMenu {
+                Button("Edit") {
+                    selected = event
+                    showForm = true
+                }
+                Button("Add to Calendar") {
+                    event.addToCalendar()
+                }
+                Button("Delete", role: .destructive) {
+                    context.deleteEvent(event)
+                }
+            }
     }
 }
+
+extension ReinforcementTimeEvent {
+    static let example = ReinforcementTimeEvent(
+        dueDate: Date().addingTimeInterval(3600),
+        systemName: "Jita",
+        planet: 4,
+        isDefence: false
+    )
     
-    struct Preview {
-        
-        let modelContainer: ModelContainer
-        init() {
-            let config = ModelConfiguration(isStoredInMemoryOnly: true)
-            do {
-                modelContainer = try ModelContainer(for: ReinforcementTimeEvent.self, configurations: config)
-            } catch {
-                fatalError("Could not initialize ModelContainer")
-            }
-        }
-        func addExamples(_ examples: [ReinforcementTimeEvent]) {
-            
-            Task { @MainActor in
-                examples.forEach { example in
-                    modelContainer.mainContext.insert(example)
-                }
-            }
-            
-        }
-        
+    static let sampleItems: [ReinforcementTimeEvent] = [
+        .example,
+        ReinforcementTimeEvent(dueDate: Date().addingTimeInterval(-1800), systemName: "Amamake", planet: 2,   isDefence: true),
+        ReinforcementTimeEvent(dueDate: Date().addingTimeInterval(7200), systemName: "Rens", planet: 3,  isDefence: false)
+    ]
+}
+
+#Preview {
+    let config = ModelConfiguration(isStoredInMemoryOnly: true)
+    let container = try! ModelContainer(for: ReinforcementTimeEvent.self, configurations: config)
+    
+    // Insertion manuelle des événements mock
+    for item in ReinforcementTimeEvent.sampleItems {
+        container.mainContext.insert(item)
     }
     
-    extension ReinforcementTimeEvent {
-        static var sampleItems: [ReinforcementTimeEvent] {
-            [
-                ReinforcementTimeEvent(createdDate: Date(), dueDate: Date.init(timeIntervalSinceNow: 43234), systemName: "Jita", planet: 4, isDefence: true),
-                ReinforcementTimeEvent(createdDate: Date(), dueDate: Date.init(timeIntervalSinceNow: 23442), systemName: "Amarr", planet: 8, isDefence: false)
-            ]
-        }
-    }
-    
-    #Preview {
-        let preview = Preview()
-        
-        preview.addExamples(ReinforcementTimeEvent.sampleItems)
-        
-        return EventList()
-            .modelContainer(preview.modelContainer)
-    }
+    return EventList()
+        .modelContainer(container)
+}
