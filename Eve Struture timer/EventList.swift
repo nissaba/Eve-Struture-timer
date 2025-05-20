@@ -35,7 +35,7 @@ struct EventList: View {
                 }
             }
             .sheet(isPresented: $showForm) {
-                EventFormView(isVisible: $showForm, selectedEvent: selected)
+                EventFormView(isVisible: $showForm, context: context, selectedEvent: selected)
             }
             .onReceive(Timer.publish(every: 60, on: .main, in: .common).autoconnect()) { newDate in
                 now = newDate

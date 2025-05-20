@@ -33,7 +33,6 @@ struct MyApp: App {
                 AddEventToCalendarButton().keyboardShortcut("F")
                 Divider()
                 DeleteEventButton().keyboardShortcut("G")
-                    .environmentObject(selectionModel)
             }
             
         }
