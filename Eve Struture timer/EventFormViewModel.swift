@@ -1,171 +1,146 @@
 // EventFormViewModel.swift
-
 import Foundation
-import SwiftUI
 import SwiftData
 
-@MainActor
-final class EventFormViewModel: ObservableObject {
-    // MARK: - Dependencies
-    private let context: ModelContext
+@Observable
+class EventFormViewModel {
+    let context: ModelContext
 
-    // MARK: - Input Properties
-    @Published var systemName: String = ""
-    @Published var planetNumber: String = ""
-    @Published var eventStartTime: String = ""
-    @Published var timeToAdd: String = ""
-    @Published var isDefenseTimer: Bool = false
+    // MARK: - Input fields
+    var systemName: String = ""
+    var planetNumber: String = ""
+    var eventStartTime: String = ""   // Optional start time (HH:mm)
+    var timeToAdd: String = ""        // Duration input (e.g., 1j2h30m)
+    var isDefenseTimer: Bool = false
 
-    // MARK: - Output
-    @Published var resultText: String = Constants.enterData
-    @Published var fromDate: Date?
+    // MARK: - Output and state
+    var resultText: String = Constants.enterData
+    var fromDate: Date?
 
-    // MARK: - Validation Flags
-    @Published var isSystemNameValid = false
-    @Published var isPlanetNumberValid = false
-    @Published var isEventStartTimeValid = true
-    @Published var isTimeToAddValid = false
+    // MARK: - Validation flags
+    var isSystemNameValid = false
+    var isPlanetNumberValid = false
+    var isEventStartTimeValid = true
+    var isTimeToAddValid = false
 
-    // MARK: - Editing Existing Event
-    private let editingEvent: ReinforcementTimeEvent?
+    // MARK: - Editing mode
+    let editingEvent: ReinforcementTimeEvent?
 
-    // MARK: - Computed
     var isAllValid: Bool {
         isSystemNameValid && isPlanetNumberValid && isEventStartTimeValid && isTimeToAddValid
     }
 
-    // MARK: - Init
     init(context: ModelContext, editingEvent: ReinforcementTimeEvent? = nil) {
         self.context = context
         self.editingEvent = editingEvent
 
         if let event = editingEvent {
-            systemName = event.systemName
-            planetNumber = "\(event.planet)"
-            fromDate = event.createdDate
-            isDefenseTimer = event.isDefence
-            timeToAdd = Self.formatRemainingTime(event.remainingTime)
-        }
-    }
+            self.systemName = event.systemName
+            self.planetNumber = "\(event.planet)"
+            self.fromDate = event.createdDate
+            self.isDefenseTimer = event.isDefence
 
-    // MARK: - Actions
-
-    func saveEvent() {
-        guard let planet = Int8(planetNumber) else {
-            resultText = Constants.missingPlanetNumber
-            return
-        }
-
-        guard let date = fromDate else {
-            resultText = Constants.badDate
-            return
-        }
-
-        if let event = editingEvent {
-            updateEvent(event, with: date)
-        } else if let existingEvent = fetchEvent(systemName: systemName, planet: planet) {
-            updateEvent(existingEvent, with: date)
-        } else {
-            createNewEvent(systemName: systemName, planet: planet, date: date, isDefence: isDefenseTimer)
+            let remainingTime = event.remainingTime
+            self.timeToAdd = Self.formatTimeInterval(remainingTime)
         }
     }
 
     func calculateFutureTime() {
-        guard let startDate = createStartDate(), let timeOffset = parseTimeOffset() else {
-            resultText = Constants.invalidInput
+        guard let start = createStartDate() else {
+            resultText = Constants.invalidEventTimeMessage
             return
         }
-        let finalDate = startDate.addingTimeInterval(timeOffset)
-        fromDate = startDate
-        resultText = formatDate(finalDate)
-    }
 
-    // MARK: - Helpers
-
-    private func updateEvent(_ event: ReinforcementTimeEvent, with date: Date) {
-        guard let timeDelta = parseTimeOffset() else { return }
-        context.updateEvent(
-            event,
-            newSystemName: systemName,
-            newPlanet: Int8(planetNumber),
-            newCreatedDate: date,
-            timeRemaining: timeDelta,
-            newIsDefence: isDefenseTimer
-        )
-    }
-
-    private func createNewEvent(systemName: String, planet: Int8, date: Date, isDefence: Bool) {
-        guard let timeTo = parseTimeOffset() else { return }
-        context.addEvent(
-            systemName: systemName,
-            planet: planet,
-            createdDate: date,
-            timeInterval: timeTo,
-            isDefence: isDefence
-        )
-    }
-
-    private func fetchEvent(systemName: String, planet: Int8) -> ReinforcementTimeEvent? {
-        let predicate = #Predicate<ReinforcementTimeEvent> { event in
-            event.systemName == systemName && event.planet == planet
+        guard let offset = Self.parseFlexibleDuration(timeToAdd) else {
+            resultText = Constants.invalidAddTimeMessage
+            return
         }
-        let descriptor = FetchDescriptor<ReinforcementTimeEvent>(predicate: predicate)
-        return try? context.fetch(descriptor).first
-    }
 
-    private func parseTimeOffset() -> TimeInterval? {
-        let timeComponents = timeToAdd.split(separator: ":").compactMap { Int($0) }
-        guard timeComponents.count == Constants.timeComponentCount else { return nil }
-        return TimeInterval(timeComponents[0] * Constants.secondsPerDay + timeComponents[1] * Constants.secondsPerHour + timeComponents[2] * Constants.secondsPerMinute)
+        let finalDate = start.addingTimeInterval(offset)
+        fromDate = start
+        resultText = Self.formatDate(finalDate)
     }
 
     private func createStartDate() -> Date? {
         let calendar = Calendar.current
         let now = Date()
-        let eventComponents = eventStartTime.split(separator: ":").compactMap { Int($0) }
+        let components = eventStartTime.split(separator: ":").compactMap { Int($0) }
 
-        guard eventComponents.count == Constants.eventTimeComponentCount else { return now }
+        var dateComponents = calendar.dateComponents([.year, .month, .day], from: now)
 
-        var components = calendar.dateComponents([.year, .month, .day], from: now)
-        components.hour = eventComponents[0]
-        components.minute = eventComponents[1]
+        if components.count == 2 {
+            dateComponents.hour = components[0]
+            dateComponents.minute = components[1]
+        } else {
+            return now
+        }
 
-        return calendar.date(from: components)
+        return calendar.date(from: dateComponents)
     }
 
-    private func formatDate(_ date: Date) -> String {
+    // MARK: - Helpers
+
+    static func parseFlexibleDuration(_ input: String) -> TimeInterval? {
+        let pattern = Constants.durationPattern
+
+        guard let regex = try? NSRegularExpression(pattern: pattern),
+              let match = regex.firstMatch(in: input, range: NSRange(input.startIndex..., in: input)) else {
+            return nil
+        }
+
+        func extract(_ index: Int) -> Int {
+            guard let range = Range(match.range(at: index), in: input),
+                  let value = Int(input[range]) else { return 0 }
+            return value
+        }
+
+        let days = extract(1)
+        let hours = extract(2)
+        let minutes = extract(3)
+
+        return TimeInterval(days * Constants.secondsPerDay + hours * Constants.secondsPerHour + minutes * Constants.secondsPerMinute)
+    }
+
+    static func formatTimeInterval(_ interval: TimeInterval) -> String {
+        let totalMinutes = Int(interval) / Constants.secondsPerMinute
+        let days = totalMinutes / Constants.minutesPerDay
+        let hours = (totalMinutes % Constants.minutesPerDay) / Constants.minutesPerHour
+        let minutes = totalMinutes % Constants.minutesPerHour
+
+        var parts: [String] = []
+        if days > 0 { parts.append(String(format: Constants.formatDays, days)) }
+        if hours > 0 { parts.append(String(format: Constants.formatHours, hours)) }
+        if minutes > 0 { parts.append(String(format: Constants.formatMinutes, minutes)) }
+
+        return parts.isEmpty ? "0m" : parts.joined()
+    }
+
+    static func formatDate(_ date: Date) -> String {
         let formatter = DateFormatter()
-        formatter.timeZone = .init(abbreviation: Constants.utcAbbreviation)
+        formatter.timeZone = .current
         formatter.dateFormat = Constants.dateFormatString
         return formatter.string(from: date)
     }
+}
 
-    private static func formatRemainingTime(_ seconds: TimeInterval) -> String {
-        guard seconds > 0 else { return Constants.defaultFormattedTime }
-        let days = Int(seconds) / Constants.secondsPerDay
-        let hours = (Int(seconds) % Constants.secondsPerDay) / Constants.secondsPerHour
-        let minutes = (Int(seconds) % Constants.secondsPerHour) / Constants.secondsPerMinute
-        return String(format: Constants.remainingTimeFormat, days, hours, minutes)
-    }
+// MARK: - Constants
 
-    // MARK: - Constants
-
-    private enum Constants {
+extension EventFormViewModel {
+    struct Constants {
+        static let formatDays = "%dj"
+        static let formatHours = "%dh"
+        static let formatMinutes = "%dm"
         static let enterData = "Enter Information"
-        static let missingPlanetNumber = "Planet Number Missing"
-        static let badDate = "Bad date"
-        static let invalidInput = "Invalid input"
-
-        static let secondsPerDay = 86400
-        static let secondsPerHour = 3600
-        static let secondsPerMinute = 60
-
-        static let timeComponentCount = 3
-        static let eventTimeComponentCount = 2
-
+        static let invalidEventTimeMessage = "Invalid event time input"
+        static let invalidAddTimeMessage = "Invalid time to add input"
         static let dateFormatString = "dd/MM/yyyy HH:mm"
-        static let utcAbbreviation = "UTC"
-        static let defaultFormattedTime = "00:00:00"
-        static let remainingTimeFormat = "%d:%02d:%02d"
+        static let durationPattern = "^(?:(\\d+)j)?(?:(\\d+)h)?(?:(\\d+)m)?$"
+
+        static let secondsPerMinute = 60
+        static let secondsPerHour = 3600
+        static let secondsPerDay = 86400
+        static let minutesPerHour = 60
+        static let minutesPerDay = 1440
     }
 }
+
