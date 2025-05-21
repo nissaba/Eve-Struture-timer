@@ -76,7 +76,7 @@ final class EventFormViewModel: ObservableObject {
             return
         }
         let finalDate = startDate.addingTimeInterval(timeOffset)
-        fromDate = finalDate
+        fromDate = startDate
         resultText = formatDate(finalDate)
     }
 
