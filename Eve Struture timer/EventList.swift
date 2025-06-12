@@ -13,7 +13,7 @@ struct EventList: View {
     
     var body: some View {
         NavigationStack {
-            ScrollView {
+            ScrollView {List{}
                 LazyVStack(spacing: 12) {
                     let eventsSnapshot = events
                     ForEach(eventsSnapshot, id: \.self) { event in

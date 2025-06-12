@@ -13,19 +13,19 @@ import AppKit
 
 struct EventFormView: View {
     // MARK: - Environment
-
+    
     // MARK: - Bindings
     @Binding var isVisible: Bool
-
+    
     // MARK: - State
     @State private var viewModel: EventFormViewModel
-
+    
     // MARK: - Init
     init(isVisible: Binding<Bool>, context: ModelContext, selectedEvent: ReinforcementTimeEvent? = nil) {
         self._isVisible = isVisible
         self._viewModel = State(initialValue: EventFormViewModel(context: context, editingEvent: selectedEvent))
     }
-
+    
     var body: some View {
         VStack {
             inputFields
@@ -40,57 +40,53 @@ struct EventFormView: View {
         .onChange(of: viewModel.eventStartTime) { _,_ in
             if viewModel.isAllValid {
                 viewModel.calculateFutureTime()
+            }else{
+                print("not valid")
             }
         }
         .frame(width: Constants.formWidth, height: Constants.formHeight)
         .padding()
     }
-
+    
     private var inputFields: some View {
         VStack(alignment: .center, spacing: 4) {
             ValidationTextField(
                 text: $viewModel.systemName,
-                label: Constants.systemNameLabel,
-                isValid: $viewModel.isSystemNameValid,
+                errorMessage: $viewModel.systemNameError,
                 placeHolder: Constants.systemNamePlaceholder,
-                errorMessage: Constants.systemNameError,
-                validator: RegexValidator(pattern: ".+")
-            )
-
+                label: Constants.systemNameLabel,
+            ){
+                
+            }
+            
             ValidationTextField(
                 text: $viewModel.planetNumber,
-                label: Constants.planetLabel,
-                isValid: $viewModel.isPlanetNumberValid,
+                errorMessage: $viewModel.planetNumberError,
                 placeHolder: Constants.planetPlaceholder,
-                errorMessage: Constants.planetError,
-                validator: RegexValidator(pattern: Constants.planetNumberPattern)
-            )
-
+                label: Constants.planetLabel,
+            ){}
+            
             ValidationTextField(
-    text: $viewModel.eventStartTime,
-    label: Constants.startTimeLabel,
-    isValid: $viewModel.isEventStartTimeValid,
-    placeHolder: Constants.startTimePlaceholder,
-    errorMessage: Constants.startTimeError,
-    validator: RegexValidator(pattern: Constants.optionalTimeOffsetPattern)
-)
-
+                text: $viewModel.eventStartTime,
+                errorMessage: $viewModel.eventStartTimeError,
+                placeHolder: Constants.startTimePlaceholder,
+                label: Constants.startTimeLabel,
+            ){}
+            
             ValidationTextField(
                 text: $viewModel.timeToAdd,
-                label: Constants.durationLabel,
-                isValid: $viewModel.isTimeToAddValid,
+                errorMessage: $viewModel.timeToAddError,
                 placeHolder: Constants.durationPlaceholder,
-                errorMessage: Constants.durationError,
-                validator: RegexValidator(pattern: EventFormViewModel.Constants.durationPattern)
-            )
-
+                label: Constants.durationLabel,
+            ){}
+            
             Toggle(isOn: $viewModel.isDefenseTimer) {
                 Text(Constants.toggleLabel)
             }
             .padding(.top, Constants.fieldTopPadding)
         }
     }
-
+    
     private var resultView: some View {
         Text(viewModel.resultText)
             .font(.title)
@@ -102,7 +98,7 @@ struct EventFormView: View {
                 }
             }
     }
-
+    
     private var actionButtons: some View {
         HStack {
             Spacer()
@@ -111,64 +107,44 @@ struct EventFormView: View {
             Spacer()
         }
     }
-
+    
     private func cancelAction() {
         isVisible = false
     }
-
+    
     private func saveEvent() {
-        guard let planet = Int8(viewModel.planetNumber),
-              let baseDate = viewModel.fromDate,
-              let duration = EventFormViewModel.parseFlexibleDuration(viewModel.timeToAdd) else {
-            viewModel.resultText = Constants.invalidInput
+        guard viewModel.isAllValid else {
             return
         }
-
-        if let event = viewModel.editingEvent {
-            viewModel.context.updateEvent(event,
-                                newSystemName: viewModel.systemName,
-                                newPlanet: planet,
-                                newCreatedDate: baseDate,
-                                timeRemaining: duration,
-                                newIsDefence: viewModel.isDefenseTimer)
-        } else {
-            viewModel.context.addEvent(systemName: viewModel.systemName,
-                             planet: planet,
-                             createdDate: baseDate,
-                             timeInterval: duration,
-                             isDefence: viewModel.isDefenseTimer)
-        }
-
+        
+        viewModel.saveEvent()
+        
         isVisible = false
     }
 }
 
 // MARK: - Constants
 
-// MARK: - Constants
+
 
 extension EventFormView {
     struct Constants {
-        static let optionalTimeOffsetPattern = "^$|^(?:(\\d{1,2})h)?(?:(\\d{1,2})m)?$"
-
+        static let optionalTimeOffsetPattern = #"^$|^(?:\d{1,2}h\d{1,2}m|\d{1,2}h|\d{1,2}m)$"#
+        
         static let systemNameLabel = "System Name"
         static let systemNamePlaceholder = "Jita"
-        static let systemNameError = "System name must not be empty"
-
+        
         static let planetLabel = "Planet Number"
         static let planetPlaceholder = "8"
-        static let planetError = "Planet number must be a positive integer"
-
+        
         static let startTimeLabel = "From Date (optional)"
         static let startTimePlaceholder = "Optional start time (e.g., 20h12m)"
-        static let startTimeError = "Expected time like 20h12m or empty"
-
+        
         static let durationLabel = "Timer remaining to event"
         static let durationPlaceholder = "Time to add (e.g., 1j2h30m)"
-        static let durationError = "Expected duration like 1j2h30m"
-
+        
         static let toggleLabel = "Is defence timer"
-
+        
         static let copyButton = "Copy"
         static let saveButton = "Save"
         static let cancelButton = "Cancel"
@@ -182,7 +158,7 @@ extension EventFormView {
 
 #Preview {
     let context = try! ModelContainer(for: ReinforcementTimeEvent.self).mainContext
-
+    
     let mockEvent = ReinforcementTimeEvent(
         dueDate: Date().addingTimeInterval(3600 * 24), // +1 day
         systemName: "Jita",
