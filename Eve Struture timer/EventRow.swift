@@ -13,39 +13,89 @@ struct EventRow: View {
     @Binding var selectedEvent: ReinforcementTimeEvent?
     
     var body: some View {
-        
-        ZStack() {
-            RoundedRectangle(cornerRadius: 10)
-                .fill(selectedEvent?.id == event.id ? Color.accentColor.opacity(0.15) : Color.clear)
-            
-            Grid(horizontalSpacing: 16, verticalSpacing: 8) {
-                GridRow {
-                    LabeledValueRow(label: "System:", value: event.systemName).frame(minWidth: 120, alignment: .leading)
-                    LabeledValueRow(label: "Local Time:", value: formattedLocalDate(date: event.dueDate)).frame(minWidth: 120, alignment: .leading).strikethrough(event.isPastDue, pattern: .solid)
-                    
-                }
-                GridRow {
-                    LabeledValueRow(label: "Planet:", value: "\(event.planet)").frame(minWidth: 120, alignment: .leading)
-                    LabeledValueRow(label: "EVE Time:", value: formattedDate(date: event.dueDate)).frame(minWidth: 120, alignment: .leading).strikethrough(event.isPastDue, pattern: .solid)
-                    
-                    
-                }
+        ZStack(alignment: .leading) {
+            if selectedEvent?.id == event.id {
+                RoundedRectangle(cornerRadius: 18)
+                    .fill(Color.accentColor.opacity(0.2))
+                RoundedRectangle(cornerRadius: 18)
+                    .stroke(Color.accentColor, lineWidth: 2)
+            } else {
+                RoundedRectangle(cornerRadius: 18)
+                    .fill(
+                        LinearGradient(
+                            gradient: Gradient(colors: [.gray.opacity(0.12), .gray.opacity(0.12) ]),
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                RoundedRectangle(cornerRadius: 18)
+                    .stroke(.gray.opacity(0.25), lineWidth: 1)
             }
-            .gridColumnAlignment(.leading)
-            .padding(.horizontal)
-            
+            VStack(alignment: .leading, spacing: 12) {
+                locationView
+                Divider()
+                localTimeView
+                Divider()
+                eveTimeVView
+            }
+            .padding(20)
         }
-        .contentShape(Rectangle()) // 🟢 Makes whole cell respond to clicks
+        .frame(minWidth: 368)
+        .contentShape(Rectangle())
         .onTapGesture {
-            selectedEvent = event // 🟢 Set selection on tap
+            selectedEvent = event
         }
-        .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(.ultraThinMaterial)
-                .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
-        )
-        .frame(minWidth: 384)
-        .foregroundColor(event.isDefence ? Color.red : Color.orange)
+        .shadow(color: .black.opacity(0.10), radius: 6, x: 0, y: 3)
+        .foregroundStyle(selectedEvent?.id == event.id ? Color.accentColor : (event.isDefence ? Color.red : Color.orange))
+        .animation(.spring(duration: 0.25), value: selectedEvent?.id)
+    }
+    
+    private var eveTimeVView: some View {
+        HStack {
+            Image(systemName: "timer")
+                .foregroundStyle(.secondary)
+            Text("EVE Time:")
+                .fontWeight(.semibold)
+            Text(formattedDate(date: event.dueDate))
+                .strikethrough(event.isPastDue, pattern: .solid)
+                .foregroundStyle(event.isPastDue ? .secondary : .primary)
+            Spacer()
+        }
+    }
+    
+    private var localTimeView: some View {
+        HStack {
+            Image(systemName: "clock.fill")
+                .foregroundStyle(.secondary)
+            Text("Local Time:")
+                .fontWeight(.semibold)
+            Text(formattedLocalDate(date: event.dueDate))
+                .strikethrough(event.isPastDue, pattern: .solid)
+                .foregroundStyle(event.isPastDue ? .secondary : .primary)
+            Spacer()
+        }
+    }
+    private var locationView: some View {
+        HStack {
+            Image("solar")
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: 24, height: 24, alignment: .center)
+                .foregroundStyle(.secondary)
+            Text("System:")
+                .fontWeight(.semibold)
+            Text(event.systemName)
+                .foregroundStyle(.primary)
+            Divider()
+            Image(systemName: "circle.fill")
+                .foregroundStyle(.secondary)
+            Text("Planet:")
+                .fontWeight(.semibold)
+            Text("\(event.planet)")
+                .foregroundStyle(.primary)
+            Spacer()
+            Spacer()
+        }
     }
 }
 

@@ -11,17 +11,17 @@ struct EventList: View {
     @State private var showForm = false
     @State private var deleteRequested = false
     
+    
     var body: some View {
         NavigationStack {
-            ScrollView {List{}
+            ScrollView {
                 LazyVStack(spacing: 12) {
                     let eventsSnapshot = events
                     ForEach(eventsSnapshot, id: \.self) { event in
                         eventCell(for: event)
                     }
                 }
-                .padding(.top)
-                .padding(.horizontal)
+                .padding()
             }
             .background(
                 colorScheme == .dark ? Color.black.opacity(0.3) : Color.white.opacity(0.6)
@@ -29,6 +29,7 @@ struct EventList: View {
             .navigationTitle("Reinforcement Timers")
             .toolbar {
                 Button {
+                    selected = nil
                     showForm = true
                 } label: {
                     Label("Add Event", systemImage: "plus")
