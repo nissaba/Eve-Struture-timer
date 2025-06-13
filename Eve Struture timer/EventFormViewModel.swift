@@ -240,7 +240,7 @@ private extension EventFormViewModel {
         static let systemNamePattern = "^[a-zA-Z0-9]+(?:[- ]?[a-zA-Z0-9]+)*$"
         static let planetNumberPattern = "^[1-9][0-9]*$"
         static let optionalTimePattern = "^$|^(?:\\d{1,2}h\\d{1,2}m|\\d{1,2}h|\\d{1,2}m)$"
-        static let timeRemaningPattern = "^\\d{1,2}:[0-2]\\d:[0-5]\\d$"
+        static let timeRemaningPattern = "^(0|1):(0[0-9]|1[0-9]|2[0-3]):(0[0-9]|[1-5][0-9]|60)$"
 
         static let systemNameError = "Only letters, numbers, spaces, and a single hyphen are allowed."
         static let planetNumberError = "Enter a valid positive planet number."

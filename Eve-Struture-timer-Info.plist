@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>NSCalendarsWriteOnlyAccessUsageDescription</key>
-	<string>Grant permission to add events to your calendar.</string>
+	<string>EVE Timer needs calendar access to save timers locally on your device. Your calendar data is never shared or used for any other purpose.</string>
 	<key>NSServices</key>
 	<array>
 		<dict/>
