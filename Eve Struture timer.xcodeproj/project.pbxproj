@@ -10,9 +10,22 @@
 		8C28A5D02D7BF9B700205F46 /* Eve Struture timer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Eve Struture timer.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		8CC5763A2E0870F800DA9E61 /* Exceptions for "Eve Struture timer" folder in "Eve Struture timer" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				README.md,
+			);
+			target = 8C28A5CF2D7BF9B700205F46 /* Eve Struture timer */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		8C28A5D22D7BF9B700205F46 /* Eve Struture timer */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				8CC5763A2E0870F800DA9E61 /* Exceptions for "Eve Struture timer" folder in "Eve Struture timer" target */,
+			);
 			path = "Eve Struture timer";
 			sourceTree = "<group>";
 		};
