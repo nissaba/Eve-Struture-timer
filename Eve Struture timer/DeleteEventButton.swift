@@ -9,6 +9,10 @@
 import SwiftUI
 import SwiftData
 
+/// A destructive button that requests deletion of the currently selected reinforcement event.
+///
+/// Uses focused bindings to access the currently selected event and a delete request flag.
+/// The button is disabled if no event is selected. When pressed, it sets the delete request flag to true.
 struct DeleteEventButton: View {
     @FocusedBinding(\.selectedEvent) private var selectedEvent
     @FocusedBinding(\.deleteRequested) private var deleteRequested
@@ -20,3 +24,4 @@ struct DeleteEventButton: View {
         .disabled(selectedEvent == nil)
     }
 }
+

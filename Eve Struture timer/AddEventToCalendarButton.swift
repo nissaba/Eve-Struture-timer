@@ -8,6 +8,11 @@
 import SwiftUI
 import SwiftData
 
+/// A button that adds the currently selected reinforcement event to the user's calendar.
+///
+/// Uses the focused value from the environment to access the selected event.
+/// The button is disabled if no event is selected.
+/// When pressed, it calls the event's `addToCalendar()` method.
 struct AddEventToCalendarButton: View {
     @FocusedValue(\.selectedEvent) private var selectedEvent
 
@@ -20,3 +25,4 @@ struct AddEventToCalendarButton: View {
         .disabled(selectedEvent?.wrappedValue == nil)
     }
 }
+

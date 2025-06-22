@@ -11,21 +11,31 @@ import SwiftUI
 import SwiftData
 import AppKit
 
+/// A SwiftUI form view for creating or editing a reinforcement event.
+///
+/// Provides input fields for event details, real-time validation, and actions for saving or canceling.
+/// Uses bindings for modal presentation and a local ViewModel for managing state and logic.
 struct EventFormView: View {
     // MARK: - Environment
     
-    // MARK: - Bindings
+    // Controls the sheet/modal visibility from the parent view.
     @Binding var isVisible: Bool
     
-    // MARK: - State
+    // Holds the view's state and logic for form inputs and validation.
     @State private var viewModel: EventFormViewModel
     
-    // MARK: - Init
+    /// Initializes the EventFormView for creating or editing a reinforcement event.
+    ///
+    /// - Parameters:
+    ///   - isVisible: Binding controlling the sheet/modal visibility.
+    ///   - context: The model context used for data operations.
+    ///   - selectedEvent: If non-nil, the event to edit; otherwise, prepares for a new event.
     init(isVisible: Binding<Bool>, context: ModelContext, selectedEvent: ReinforcementTimeEvent? = nil) {
         self._isVisible = isVisible
         self._viewModel = State(initialValue: EventFormViewModel(context: context, editingEvent: selectedEvent))
     }
     
+    // The main view content including input fields, result display, and action buttons.
     var body: some View {
         VStack {
             inputFields
@@ -48,6 +58,7 @@ struct EventFormView: View {
         .padding()
     }
     
+    // Builds and displays all text input fields and toggle for the form.
     private var inputFields: some View {
         VStack(alignment: .center, spacing: 4) {
             ValidationTextField(
@@ -87,6 +98,7 @@ struct EventFormView: View {
         }
     }
     
+    // Displays the computed result string and provides a copy context menu.
     private var resultView: some View {
         Text(viewModel.resultText)
             .font(.title)
@@ -99,6 +111,7 @@ struct EventFormView: View {
             }
     }
     
+    // Builds the form's save and cancel buttons.
     private var actionButtons: some View {
         HStack {
             Spacer()
@@ -108,10 +121,12 @@ struct EventFormView: View {
         }
     }
     
+    // Dismisses the form without saving.
     private func cancelAction() {
         isVisible = false
     }
     
+    // Saves a new or edited event if inputs are valid, then dismisses the form.
     private func saveEvent() {
         guard viewModel.isAllValid else {
             return
@@ -125,9 +140,8 @@ struct EventFormView: View {
 
 // MARK: - Constants
 
-
-
 extension EventFormView {
+    /// Shared constants for layout, labels, patterns, and formatting within EventFormView.
     struct Constants {
         static let optionalTimeOffsetPattern = #"^$|^(?:\d{1,2}h\d{1,2}m|\d{1,2}h|\d{1,2}m)$"#
         
@@ -171,3 +185,4 @@ extension EventFormView {
     )
     
 }
+

@@ -10,7 +10,9 @@ import SwiftUI
 import SwiftData
 import EventKit
 
-/// Represents a reinforcement event with a scheduled date, system location, and event type.
+/// A data model representing a reinforcement event in the game with relevant scheduling and location information.
+/// This class stores details such as when the event was created, when it is due, its location, and whether it is defensive or offensive.
+/// It also provides functionality to add the event to the user's calendar.
 @Model
 class ReinforcementTimeEvent: Identifiable {
     
@@ -30,12 +32,13 @@ class ReinforcementTimeEvent: Identifiable {
     var isDefence: Bool
     
     /// Initializes a new reinforcement time event.
+    ///
     /// - Parameters:
-    ///   - createdDate: The date when the event is scheduled (defaults to now).
+    ///   - createdDate: The date when the event is scheduled (defaults to current date/time).
     ///   - dueDate: The date when the event will take place.
     ///   - systemName: The name of the system where the event occurs.
     ///   - planet: The planet number associated with the event.
-    ///   - isDefence: Whether the event is defensive (`true`) or offensive (`false`).
+    ///   - isDefence: A Boolean indicating whether the event is defensive (`true`) or offensive (`false`).
     init(createdDate: Date = Date(), dueDate: Date, systemName: String, planet: Int8, isDefence: Bool) {
         self.createdDate = createdDate
         self.dueDate = dueDate
@@ -44,30 +47,33 @@ class ReinforcementTimeEvent: Identifiable {
         self.isDefence = isDefence
     }
     
-    /// The remaining time until the event happens.
-    /// - Returns: The time interval between now and the due date. If negative, the event is past due.
+    /// The remaining time interval until the event occurs.
+    ///
+    /// - Returns: The time interval in seconds from the current moment until the event's due date. Negative if the event is past due.
     var remainingTime: TimeInterval {
         return dueDate.timeIntervalSinceNow
     }
     
     /// A formatted string representation of the event's creation date.
     ///
-    /// - Returns: A string formatted as `"dd/MM/yyyy HH:mm"` (e.g., `"04/04/2025 14:30"`).
+    /// - Returns: A string formatted as `"dd/MM/yyyy HH:mm"` representing when the event was created.
     var createdDateString: String {
         let formater = DateFormatter()
         formater.dateFormat = "dd/MM/yyyy HH:mm"
         return formater.string(from: createdDate)
     }
     
-    /// Indicates whether the event is past due.
-    /// - Returns: `true` if the event's due date is in the past, otherwise `false`.
+    /// Indicates whether the event's due date is in the past.
+    ///
+    /// - Returns: `true` if the event is past due, otherwise `false`.
     var isPastDue: Bool {
         return remainingTime < 0
     }
     
+    /// Requests access and attempts to add the reinforcement event to the user's calendar.
+    ///
+    /// Handles permission requests for calendar access and creates the event if access is granted.
     func addToCalendar() {
-       
-        
         let store = EKEventStore()
        
         if #available(macOS 14, *) {
@@ -100,6 +106,14 @@ class ReinforcementTimeEvent: Identifiable {
         }
     }
 
+    /// Creates and saves a calendar event for the reinforcement using the specified calendar and event store.
+    ///
+    /// - Parameters:
+    ///   - store: The `EKEventStore` instance used to save the event.
+    ///   - calendar: The calendar in which the event should be added.
+    ///
+    /// This method sets the event title, start and end dates, notes, and calendar.
+    /// It checks for calendar permissions before attempting to save.
     private func createEvent(using store: EKEventStore, calendar: EKCalendar) {
         let event = EKEvent(eventStore: store)
         event.title = "Reinforcement: \(self.systemName)"
@@ -123,6 +137,9 @@ class ReinforcementTimeEvent: Identifiable {
         }
     }
     
+    /// Prints debug information about all calendars available in the event store.
+    ///
+    /// This method lists each calendar's title, whether it allows modifications, and its type.
     static func debugPrintAllCalendars() {
         let store = EKEventStore()
         let calendars = store.calendars(for: .event)

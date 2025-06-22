@@ -1,17 +1,27 @@
 import SwiftUI
 import SwiftData
 
+/// A view displaying a list of reinforcement time events, managing selection, edits, and deletions.
 struct EventList: View {
+    /// The Core Data model context used for CRUD operations.
     @Environment(\.modelContext) private var context
+    /// The shared selection model environment object for managing selected event state.
     @EnvironmentObject var selectionModel: SelectionModel
+    /// A query fetching reinforcement time events sorted by their due date.
     @Query(sort: \ReinforcementTimeEvent.dueDate) var events: [ReinforcementTimeEvent]
+    /// The current color scheme of the device (light or dark mode).
     @Environment(\.colorScheme) var colorScheme
+    /// The current date/time, updated every minute to refresh the UI.
     @State private var now = Date()
+    /// The currently selected reinforcement time event, if any.
     @State private var selected: ReinforcementTimeEvent? = nil
+    /// Controls the presentation state of the event form sheet.
     @State private var showForm = false
+    /// Flags whether a delete action has been requested for the selected event.
     @State private var deleteRequested = false
     
     
+    /// The main view body showing a navigation stack with a scrollable list of events.
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -60,6 +70,8 @@ struct EventList: View {
         
     }
     
+    /// Returns a view representing a single event cell with context menu and tap gestures.
+    /// - Parameter event: The reinforcement time event to display in the cell.
     @ViewBuilder
     private func eventCell(for event: ReinforcementTimeEvent) -> some View {
         EventRow(event: event, selectedEvent: $selected){
@@ -92,7 +104,9 @@ struct EventList: View {
     }
 }
 
+/// Extension providing example and sample reinforcement time events for preview and testing.
 extension ReinforcementTimeEvent {
+    /// An example reinforcement time event used as a template.
     static let example = ReinforcementTimeEvent(
         dueDate: Date().addingTimeInterval(3600),
         systemName: "Jita",
@@ -100,6 +114,7 @@ extension ReinforcementTimeEvent {
         isDefence: false
     )
     
+    /// An array of sample reinforcement time events for testing and previews.
     static let sampleItems: [ReinforcementTimeEvent] = [
         .example,
         ReinforcementTimeEvent(dueDate: Date().addingTimeInterval(-1800), systemName: "Amamake", planet: 2,   isDefence: true),

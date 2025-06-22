@@ -8,10 +8,14 @@
 
 import SwiftUI
 
+/// A reusable horizontal row displaying a label and its corresponding value.
 struct LabeledValueRow: View {
+    /// The text label describing the value.
     let label: String
+    /// The text value associated with the label.
     let value: String
 
+    /// The view displaying the label and value side by side with specific font and layout.
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: 4) {
             Text(label)
@@ -27,3 +31,4 @@ struct LabeledValueRow: View {
         }
     }
 }
+
