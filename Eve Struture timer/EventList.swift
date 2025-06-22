@@ -62,21 +62,31 @@ struct EventList: View {
     
     @ViewBuilder
     private func eventCell(for event: ReinforcementTimeEvent) -> some View {
-        EventRow(event: event, selectedEvent: $selected)
+        EventRow(event: event, selectedEvent: $selected){
+            context.deleteEvent(event)
+        }
             .contentShape(Rectangle())
             .onTapGesture {
                 selected = event
             }
+            .onTapGesture(count: 2) {
+                selected = event
+                showForm = true
+            }
             .contextMenu {
-                Button("Edit") {
+                Button(action: {
                     selected = event
                     showForm = true
+                }) {
+                    Label("Edit", systemImage: "square.and.pencil")
                 }
-                Button("Add to Calendar") {
+                Button(action: {
                     event.addToCalendar()
+                }) {
+                    Label("Add to Calendar", systemImage: "calendar.badge.plus")
                 }
-                Button("Delete", role: .destructive) {
-                    context.deleteEvent(event)
+                Button(role: .destructive, action: { context.deleteEvent(event) }) {
+                    Label("Delete", systemImage: "trash")
                 }
             }
     }

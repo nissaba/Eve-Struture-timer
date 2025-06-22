@@ -7,110 +7,102 @@
 
 import SwiftUI
 import SwiftData
+import AppKit
 
 struct EventRow: View {
     let event: ReinforcementTimeEvent
     @Binding var selectedEvent: ReinforcementTimeEvent?
+    var onDelete: () -> Void
+    @State private var showingCalendarAlert = false
+    @State private var calendarAlertMessage = ""
     
     var body: some View {
-        ZStack(alignment: .leading) {
-            if selectedEvent?.id == event.id {
-                RoundedRectangle(cornerRadius: 18)
-                    .fill(Color.accentColor.opacity(0.2))
-                RoundedRectangle(cornerRadius: 18)
-                    .stroke(Color.accentColor, lineWidth: 2)
-            } else {
-                RoundedRectangle(cornerRadius: 18)
-                    .fill(
-                        LinearGradient(
-                            gradient: Gradient(colors: [.gray.opacity(0.12), .gray.opacity(0.12) ]),
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                RoundedRectangle(cornerRadius: 18)
-                    .stroke(.gray.opacity(0.25), lineWidth: 1)
-            }
-            VStack(alignment: .leading, spacing: 12) {
-                locationView
-                Divider()
-                localTimeView
-                Divider()
-                eveTimeVView
-            }
-            .padding(20)
+        VStack(alignment: .leading, spacing: 8) {
+            headerView
+            detailsView
         }
-        .frame(minWidth: 368)
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 18)
+                .fill(Color.gray.opacity(0.12))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 18)
+                .stroke(selectedEvent?.id == event.id ? Color.accentColor : Color.gray.opacity(0.25), lineWidth: selectedEvent?.id == event.id ? 2 : 1)
+        )
+        .shadow(color: selectedEvent?.id == event.id ? Color.accentColor.opacity(0.3) : Color.black.opacity(0.10), radius: selectedEvent?.id == event.id ? 10 : 6, x: 0, y: 3)
         .contentShape(Rectangle())
         .onTapGesture {
             selectedEvent = event
         }
-        .shadow(color: .black.opacity(0.10), radius: 6, x: 0, y: 3)
-        .foregroundStyle(selectedEvent?.id == event.id ? Color.accentColor : (event.isDefence ? Color.red : Color.orange))
         .animation(.spring(duration: 0.25), value: selectedEvent?.id)
-    }
-    
-    private var eveTimeVView: some View {
-        HStack {
-            Image(systemName: "timer")
-                .foregroundStyle(.secondary)
-            Text("EVE Time:")
-                .fontWeight(.semibold)
-            Text(formattedDate(date: event.dueDate))
-                .strikethrough(event.isPastDue, pattern: .solid)
-                .foregroundStyle(event.isPastDue ? .secondary : .primary)
-            Spacer()
+        .alert(calendarAlertMessage, isPresented: $showingCalendarAlert) {
+            Button("OK", role: .cancel) {}
         }
     }
     
-    private var localTimeView: some View {
-        HStack {
-            Image(systemName: "clock.fill")
-                .foregroundStyle(.secondary)
-            Text("Local Time:")
-                .fontWeight(.semibold)
-            Text(formattedLocalDate(date: event.dueDate))
-                .strikethrough(event.isPastDue, pattern: .solid)
-                .foregroundStyle(event.isPastDue ? .secondary : .primary)
-            Spacer()
-        }
+    private var utcDateFormatter: DateFormatter {
+        let formatter = DateFormatter()
+        formatter.timeZone = TimeZone(abbreviation: "UTC")
+        formatter.dateFormat = "dd/MM/yyyy HH:mm"
+        return formatter
     }
-    private var locationView: some View {
-        HStack {
-            Image("solar")
-                .resizable()
-                .aspectRatio(contentMode: .fit)
-                .frame(width: 24, height: 24, alignment: .center)
-                .foregroundStyle(.secondary)
-            Text("System:")
-                .fontWeight(.semibold)
-            Text(event.systemName)
-                .foregroundStyle(.primary)
-            Divider()
-            Image(systemName: "circle.fill")
-                .foregroundStyle(.secondary)
-            Text("Planet:")
-                .fontWeight(.semibold)
-            Text("\(event.planet)")
-                .foregroundStyle(.primary)
-            Spacer()
-            Spacer()
-        }
+    
+    private var localTimeString: String {
+        let formatter = DateFormatter()
+        formatter.timeZone = .current
+        formatter.dateFormat = "dd/MM/yyyy HH:mm"
+        return formatter.string(from: event.dueDate)
     }
 }
 
-fileprivate func formattedDate(date: Date) -> String {
-    let formatter = DateFormatter()
-    formatter.timeZone = TimeZone(abbreviation: "UTC")
-    formatter.dateFormat = "dd/MM/yyyy HH:mm"
-    return formatter.string(from: date)
-}
-
-fileprivate func formattedLocalDate(date: Date) -> String {
-    let formatter = DateFormatter()
-    formatter.timeZone = .current
-    formatter.dateFormat = "dd/MM/yyyy HH:mm"
-    return formatter.string(from: date)
+private extension EventRow {
+    var headerView: some View {
+        HStack {
+            Group{
+                Text(event.systemName)
+                    .fontWeight(.bold)
+                    .font(.headline)
+                    .strikethrough(event.isPastDue)
+                Text(" - Planet \(event.planet)")
+                    .fontWeight(.regular)
+                    .font(.headline)
+                    .strikethrough(event.isPastDue)
+            }
+            Spacer()
+            Text(event.isDefence ? "Defence" : "Offence")
+                .font(.subheadline)
+                .fontWeight(.semibold)
+                .foregroundStyle(event.isDefence ? Color.red : Color.orange)
+        }
+    }
+    var detailsView: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Due: \(localTimeString)")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                Text("UTC: \(utcDateFormatter.string(from: event.dueDate))")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            Spacer()
+            Button {
+                event.addToCalendar()
+            } label: {
+                Image(systemName: "calendar.badge.plus")
+                    .font(.title3)
+            }
+            .buttonStyle(.borderless)
+            Button {
+                onDelete()
+            } label: {
+                Image(systemName: "trash")
+                    .font(.title3)
+            }
+            .buttonStyle(.borderless)
+        }
+    }
 }
 
 #Preview {
@@ -125,7 +117,10 @@ fileprivate func formattedLocalDate(date: Date) -> String {
                 isDefence: false
             )
             
-            return EventRow(event: event, selectedEvent: $selected)
+            EventRow(event: event, selectedEvent: $selected){
+                
+            }
+                .frame(minWidth: 368)
         }
     }
     

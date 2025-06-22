@@ -66,21 +66,33 @@ class ReinforcementTimeEvent: Identifiable {
     }
     
     func addToCalendar() {
+       
+        
         let store = EKEventStore()
-
-        if #available(macOS 14, iOS 17, *) {
-            Task {
-                do {
-                    try await store.requestFullAccessToEvents()
-                    createEvent(using: store)
-                } catch {
-                    print("Calendar access denied: \(error)")
+       
+        if #available(macOS 14, *) {
+            store.requestFullAccessToEvents { [self, store] hasAccess, error in
+                if hasAccess {
+                    print("Access granted")
+                    let calendar = store.defaultCalendarForNewEvents
+                    guard let calendar = calendar else {
+                        print("No default calendar available.")
+                        return
+                    }
+                    self.createEvent(using: store, calendar: calendar)
+                } else {
+                    print("Calendar access denied: \(error?.localizedDescription ?? "unknown error")")
                 }
             }
         } else {
             store.requestAccess(to: .event) { [unowned self] granted, error in
                 if granted {
-                    createEvent(using: store)
+                    let calendar = store.defaultCalendarForNewEvents
+                    guard let calendar = calendar else {
+                        print("No default calendar available.")
+                        return
+                    }
+                    createEvent(using: store, calendar: calendar)
                 } else {
                     print("Calendar access denied: \(error?.localizedDescription ?? "unknown error")")
                 }
@@ -88,19 +100,36 @@ class ReinforcementTimeEvent: Identifiable {
         }
     }
 
-    private func createEvent(using store: EKEventStore) {
+    private func createEvent(using store: EKEventStore, calendar: EKCalendar) {
         let event = EKEvent(eventStore: store)
         event.title = "Reinforcement: \(self.systemName)"
         event.startDate = self.dueDate
         event.endDate = self.dueDate.addingTimeInterval(15 * 60)
         event.notes = "Planet \(self.planet)"
-        event.calendar = store.defaultCalendarForNewEvents
+        event.calendar = calendar
+
+        if !calendar.allowsContentModifications {
+            print("Error: The calendar does not allow adding events.")
+            return
+        }
+        print("Calendar: \(calendar.title), allows modifications: \(calendar.allowsContentModifications)")
+        print("Start date: \(String(describing: event.startDate)), End date: \(String(describing: event.endDate))")
 
         do {
             try store.save(event, span: .thisEvent)
             print("Event added to calendar.")
         } catch {
-            print("Failed to save event: \(error)")
+            print("Failed to save event. Error: \(error). Possible causes: permissions not granted, invalid calendar, or invalid dates.")
+        }
+    }
+    
+    static func debugPrintAllCalendars() {
+        let store = EKEventStore()
+        let calendars = store.calendars(for: .event)
+        print("enumerating calendars:")
+        for calendar in calendars {
+            print("Calendar: \(calendar.title), Writable: \(calendar.allowsContentModifications), Type: \(calendar.type.rawValue)")
         }
     }
 }
+
