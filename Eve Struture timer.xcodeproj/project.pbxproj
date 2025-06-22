@@ -8,24 +8,13 @@
 
 /* Begin PBXFileReference section */
 		8C28A5D02D7BF9B700205F46 /* Eve Struture timer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Eve Struture timer.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		8CC5765F2E08743400DA9E61 /* LICENSE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = LICENSE.md; sourceTree = "<group>"; };
+		8CC576602E08743400DA9E61 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 /* End PBXFileReference section */
-
-/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		8CC5763A2E0870F800DA9E61 /* Exceptions for "Eve Struture timer" folder in "Eve Struture timer" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				README.md,
-			);
-			target = 8C28A5CF2D7BF9B700205F46 /* Eve Struture timer */;
-		};
-/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		8C28A5D22D7BF9B700205F46 /* Eve Struture timer */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				8CC5763A2E0870F800DA9E61 /* Exceptions for "Eve Struture timer" folder in "Eve Struture timer" target */,
-			);
 			path = "Eve Struture timer";
 			sourceTree = "<group>";
 		};
@@ -45,6 +34,8 @@
 		8C28A5C72D7BF9B700205F46 = {
 			isa = PBXGroup;
 			children = (
+				8CC5765F2E08743400DA9E61 /* LICENSE.md */,
+				8CC576602E08743400DA9E61 /* README.md */,
 				8C28A5D22D7BF9B700205F46 /* Eve Struture timer */,
 				8C28A5D12D7BF9B700205F46 /* Products */,
 			);
