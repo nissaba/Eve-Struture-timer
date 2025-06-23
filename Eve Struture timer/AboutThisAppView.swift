@@ -1,31 +1,43 @@
 import SwiftUI
+import AppKit
 
 struct AboutThisAppView: View {
     var onClose: (() -> Void)? = nil
+
     var body: some View {
-        VStack(spacing: 20) {
-            Image(systemName: "clock.fill")
+        VStack(spacing: 16) {
+            Image("AppIconLarge")
                 .resizable()
                 .frame(width: 80, height: 80)
-                .foregroundColor(.accentColor)
-            Text("Eve Online Mercenary Den Timers")
+                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .shadow(radius: 4)
+
+            Text("Eve Online Structure Timer")
                 .font(.title)
                 .bold()
-            Text("Version 1.0.0")
+
+            Text(Bundle.appVersionAndBuild())
                 .font(.subheadline)
+
             Text("A macOS app to track and manage Mercenary Den timers for Eve Online.")
                 .multilineTextAlignment(.center)
                 .padding(.horizontal)
+
             Text("© 2025 Pascale Beaulac")
                 .font(.footnote)
                 .foregroundColor(.secondary)
-            Button("Close") {
-                onClose?()
+
+            HStack {
+                Spacer()
+                Button("Close") {
+                    onClose?()
+                }
+                .keyboardShortcut(.cancelAction)
             }
-            .padding(.top, 20)
+            .padding(.top)
         }
-        .padding(40)
-        .frame(minWidth: 350, minHeight: 320)
+        .padding()
+        .fixedSize()
     }
 }
 
