@@ -116,6 +116,7 @@ struct EventFormView: View {
         HStack {
             Spacer()
             Button(Constants.saveButton, action: saveEvent)
+                .disabled(!viewModel.isAllValid)
             Button(Constants.cancelButton, action: cancelAction)
             Spacer()
         }
