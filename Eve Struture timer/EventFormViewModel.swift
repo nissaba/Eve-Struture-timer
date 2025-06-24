@@ -17,7 +17,7 @@ final class EventFormViewModel {
         didSet { validatePlanetNumber() }
     }
 
-    /// User input for event start time (e.g., 20h12m). Validated on change.
+    /// User input for event start time (e.g., 24/06/2025). Validated on change.
     var eventStartTime: String = "" {
         didSet { validateEventStartTime() }
     }
@@ -119,7 +119,7 @@ final class EventFormViewModel {
 
     /// Validates the event start time and sets the error message.
     func validateEventStartTime() {
-        if eventStartTime.range(of: Constants.optionalTimePattern, options: .regularExpression) == nil {
+        if !eventStartTime.isEmpty && eventStartTime.range(of: Constants.optionalTimePattern, options: .regularExpression) == nil {
             eventStartTimeError = Constants.optionalTimeError
         } else {
             eventStartTimeError = nil
@@ -144,12 +144,13 @@ final class EventFormViewModel {
             resultText = Constants.invalidEventTimeMessage
             return
         }
+        fromDate = startDate
+        
         guard let timeOffset = parseTimeOffset() else {
             resultText = Constants.invalidAddTimeMessage
             return
         }
         let finalDate = startDate.addingTimeInterval(timeOffset)
-        fromDate = finalDate
         resultText = formatDate(finalDate)
     }
 
@@ -223,20 +224,16 @@ final class EventFormViewModel {
         return try? context.fetch(fetchDescriptor).first
     }
 
-    /// Creates a start date based on the current date and the eventStartTime input (hour and minute).
+    /// Creates a start date based on the current date and the eventStartTime input (dd/mm/yyyy).
     /// Returns current date if parsing fails.
     private func createStartDate() -> Date? {
-        let calendar = Calendar.current
-        let currentDate = Date()
-        let eventComponents = eventStartTime.split(separator: ":").compactMap { Int($0) }
-        var components = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: currentDate)
-
-        guard eventComponents.count == 2 else { return currentDate }
-
-        components.hour = eventComponents.first
-        components.minute = eventComponents.last
-
-        return calendar.date(from: components)
+        let formatter = DateFormatter()
+        formatter.dateFormat = "dd/MM/yyyy"
+        formatter.timeZone = TimeZone.current
+        if let date = formatter.date(from: eventStartTime) {
+            return date
+        }
+        return Date()
     }
 
     /// Parses the timeToAdd string into a TimeInterval (seconds).
@@ -285,8 +282,8 @@ private extension EventFormViewModel {
         static let systemNamePattern = "^[a-zA-Z0-9]+(?:[- ]?[a-zA-Z0-9]+)*$"
         // Regex for validating planet number input.
         static let planetNumberPattern = "^[1-9][0-9]*$"
-        // Regex for validating optional event start time input.
-        static let optionalTimePattern = "^$|^(?:\\d{1,2}h\\d{1,2}m|\\d{1,2}h|\\d{1,2}m)$"
+        // Regex for validating event start time input as dd/mm/yyyy.
+        static let optionalTimePattern = "^(0[1-9]|[12][0-9]|3[01])\\/(0[1-9]|1[0-2])\\/\\d{4}$"
         // Regex for validating time to add input in dd:hh:mm format.
         static let timeRemaningPattern = "^(0|1):(0[0-9]|1[0-9]|2[0-3]):(0[0-9]|[1-5][0-9]|60)$"
 
@@ -294,10 +291,10 @@ private extension EventFormViewModel {
         static let systemNameError = "Only letters, numbers, spaces, and a single hyphen are allowed."
         // Error message for invalid planet number input.
         static let planetNumberError = "Enter a valid positive planet number."
-        // Error message for invalid optional event start time input.
-        static let optionalTimeError = "Expected format like '3h', '45m', '2h30m' or leave blank."
+        // Error message for invalid event start time input in dd/mm/yyyy format.
+        static let optionalTimeError = "Enter date in format dd/mm/yyyy (e.g., 24/06/2025)."
         // Error message for invalid time to add input.
-        static let timeToAddError = "Expected format like '1d', '3h', '45m', '2h30m'."
+        static let timeToAddError = "Enter time in the format 'days:hours:minutes' (e.g., 1:03:45 for 1 day, 3 hours, 45 minutes)."
 
         // Error message for invalid event time input.
         static let invalidEventTimeMessage = "Invalid event time input"
@@ -309,3 +306,4 @@ private extension EventFormViewModel {
         static let missingPlanetNumber = "Planet Number Missing"
     }
 }
+

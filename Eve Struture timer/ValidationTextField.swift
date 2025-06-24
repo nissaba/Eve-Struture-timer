@@ -35,9 +35,6 @@ struct ValidationTextField: View {
     /// Optional label displayed above the text field.
     let label: String?
 
-    /// Callback triggered when the field loses focus or the user presses return.
-    let onValidate: (() -> Void)?
-
     // MARK: - Focus & Animation
 
     /// Local focus state for the embedded `TextField`.
@@ -65,14 +62,6 @@ struct ValidationTextField: View {
                 )
                 .modifier(Shake(animatableData: CGFloat(shakeTrigger)))
                 .focused($isFocused)
-                .onSubmit {
-                    onValidate?()
-                }
-                .onChange(of: isFocused) { _, newValue in
-                    if !newValue {
-                        onValidate?()
-                    }
-                }
                 .onChange(of: errorMessage) { old, new in
                     if old == nil && new != nil {
                         isFocused = true
@@ -121,7 +110,7 @@ struct Shake: GeometryEffect {
         errorMessage: $error,
         placeHolder: "Enter a number",
         label: "Planet Number"
-    ){}
+    )
     .padding()
 }
 
@@ -134,6 +123,7 @@ struct Shake: GeometryEffect {
         errorMessage: $error,
         placeHolder: "e.g. Jita",
         label: "System Name"
-    ){}
+    )
     .padding()
 }
+

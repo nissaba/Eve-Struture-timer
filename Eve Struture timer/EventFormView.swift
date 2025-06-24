@@ -66,30 +66,28 @@ struct EventFormView: View {
                 errorMessage: $viewModel.systemNameError,
                 placeHolder: Constants.systemNamePlaceholder,
                 label: Constants.systemNameLabel,
-            ){
-                
-            }
+            )
             
             ValidationTextField(
                 text: $viewModel.planetNumber,
                 errorMessage: $viewModel.planetNumberError,
                 placeHolder: Constants.planetPlaceholder,
                 label: Constants.planetLabel,
-            ){}
+            )
             
             ValidationTextField(
                 text: $viewModel.eventStartTime,
                 errorMessage: $viewModel.eventStartTimeError,
                 placeHolder: Constants.startTimePlaceholder,
                 label: Constants.startTimeLabel,
-            ){}
+            )
             
             ValidationTextField(
                 text: $viewModel.timeToAdd,
                 errorMessage: $viewModel.timeToAddError,
                 placeHolder: Constants.durationPlaceholder,
                 label: Constants.durationLabel,
-            ){}
+            )
             
             Toggle(isOn: $viewModel.isDefenseTimer) {
                 Text(Constants.toggleLabel)
@@ -144,8 +142,7 @@ struct EventFormView: View {
 extension EventFormView {
     /// Shared constants for layout, labels, patterns, and formatting within EventFormView.
     struct Constants {
-        static let optionalTimeOffsetPattern = #"^$|^(?:\d{1,2}h\d{1,2}m|\d{1,2}h|\d{1,2}m)$"#
-        
+                
         static let systemNameLabel = "System Name"
         static let systemNamePlaceholder = "Jita"
         
@@ -153,10 +150,10 @@ extension EventFormView {
         static let planetPlaceholder = "8"
         
         static let startTimeLabel = "From Date (optional)"
-        static let startTimePlaceholder = "Optional start time (e.g., 20h12m)"
+        static let startTimePlaceholder = "Enter from date (e.g., 24/06/2025)"
         
         static let durationLabel = "Timer remaining to event"
-        static let durationPlaceholder = "Time to add (e.g., 1j2h30m)"
+        static let durationPlaceholder = "Time remaining (e.g., 1:12:30)"
         
         static let toggleLabel = "Is defence timer"
         
