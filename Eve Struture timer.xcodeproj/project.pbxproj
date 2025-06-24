@@ -6,22 +6,60 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXContainerItemProxy section */
+		8C3A30CD2E0B26C10049B78D /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 8C28A5C82D7BF9B700205F46 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 8C28A5CF2D7BF9B700205F46;
+			remoteInfo = "Eve Struture timer";
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
 		8C28A5D02D7BF9B700205F46 /* Eve Struture timer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Eve Struture timer.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		8C3A30C92E0B26C10049B78D /* Eve Struture timerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Eve Struture timerTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		8CC5765F2E08743400DA9E61 /* LICENSE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = LICENSE.md; sourceTree = "<group>"; };
 		8CC576602E08743400DA9E61 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		8C3A30FF2E0B319F0049B78D /* Exceptions for "Eve Struture timer" folder in "Eve Struture timerTests" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				DataModelPersistenceProtocol.swift,
+				EventFormViewModel.swift,
+				ReinforcementTimeEvent.swift,
+			);
+			target = 8C3A30C82E0B26C10049B78D /* Eve Struture timerTests */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		8C28A5D22D7BF9B700205F46 /* Eve Struture timer */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				8C3A30FF2E0B319F0049B78D /* Exceptions for "Eve Struture timer" folder in "Eve Struture timerTests" target */,
+			);
 			path = "Eve Struture timer";
+			sourceTree = "<group>";
+		};
+		8C3A30CA2E0B26C10049B78D /* Eve Struture timerTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "Eve Struture timerTests";
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		8C28A5CD2D7BF9B700205F46 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		8C3A30C62E0B26C10049B78D /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -37,6 +75,7 @@
 				8CC5765F2E08743400DA9E61 /* LICENSE.md */,
 				8CC576602E08743400DA9E61 /* README.md */,
 				8C28A5D22D7BF9B700205F46 /* Eve Struture timer */,
+				8C3A30CA2E0B26C10049B78D /* Eve Struture timerTests */,
 				8C28A5D12D7BF9B700205F46 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -45,6 +84,7 @@
 			isa = PBXGroup;
 			children = (
 				8C28A5D02D7BF9B700205F46 /* Eve Struture timer.app */,
+				8C3A30C92E0B26C10049B78D /* Eve Struture timerTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -74,6 +114,29 @@
 			productReference = 8C28A5D02D7BF9B700205F46 /* Eve Struture timer.app */;
 			productType = "com.apple.product-type.application";
 		};
+		8C3A30C82E0B26C10049B78D /* Eve Struture timerTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 8C3A30CF2E0B26C10049B78D /* Build configuration list for PBXNativeTarget "Eve Struture timerTests" */;
+			buildPhases = (
+				8C3A30C52E0B26C10049B78D /* Sources */,
+				8C3A30C62E0B26C10049B78D /* Frameworks */,
+				8C3A30C72E0B26C10049B78D /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				8C3A30CE2E0B26C10049B78D /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				8C3A30CA2E0B26C10049B78D /* Eve Struture timerTests */,
+			);
+			name = "Eve Struture timerTests";
+			packageProductDependencies = (
+			);
+			productName = "Eve Struture timerTests";
+			productReference = 8C3A30C92E0B26C10049B78D /* Eve Struture timerTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -81,11 +144,15 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 1640;
+				LastSwiftUpdateCheck = 2600;
 				LastUpgradeCheck = 1630;
 				TargetAttributes = {
 					8C28A5CF2D7BF9B700205F46 = {
 						CreatedOnToolsVersion = 16.2;
+					};
+					8C3A30C82E0B26C10049B78D = {
+						CreatedOnToolsVersion = 26.0;
+						TestTargetID = 8C28A5CF2D7BF9B700205F46;
 					};
 				};
 			};
@@ -104,12 +171,20 @@
 			projectRoot = "";
 			targets = (
 				8C28A5CF2D7BF9B700205F46 /* Eve Struture timer */,
+				8C3A30C82E0B26C10049B78D /* Eve Struture timerTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		8C28A5CE2D7BF9B700205F46 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		8C3A30C72E0B26C10049B78D /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -126,7 +201,22 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		8C3A30C52E0B26C10049B78D /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		8C3A30CE2E0B26C10049B78D /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 8C28A5CF2D7BF9B700205F46 /* Eve Struture timer */;
+			targetProxy = 8C3A30CD2E0B26C10049B78D /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		8C28A5DD2D7BF9BC00205F46 /* Debug */ = {
@@ -262,7 +352,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 15;
+				CURRENT_PROJECT_VERSION = 24;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"Eve Struture timer/Preview Content\"";
 				DEVELOPMENT_TEAM = 949WGXSJTA;
@@ -311,7 +401,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 15;
+				CURRENT_PROJECT_VERSION = 24;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"Eve Struture timer/Preview Content\"";
 				DEVELOPMENT_TEAM = 949WGXSJTA;
@@ -349,6 +439,46 @@
 			};
 			name = Release;
 		};
+		8C3A30D02E0B26C10049B78D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 949WGXSJTA;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "studio.pascale.beaulac.Eve-Struture-timerTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Eve Struture timer.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Eve Struture timer";
+			};
+			name = Debug;
+		};
+		8C3A30D12E0B26C10049B78D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 949WGXSJTA;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "studio.pascale.beaulac.Eve-Struture-timerTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Eve Struture timer.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Eve Struture timer";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -366,6 +496,15 @@
 			buildConfigurations = (
 				8C28A5E02D7BF9BC00205F46 /* Debug */,
 				8C28A5E12D7BF9BC00205F46 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		8C3A30CF2E0B26C10049B78D /* Build configuration list for PBXNativeTarget "Eve Struture timerTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				8C3A30D02E0B26C10049B78D /* Debug */,
+				8C3A30D12E0B26C10049B78D /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
