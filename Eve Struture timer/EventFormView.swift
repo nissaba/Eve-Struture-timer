@@ -86,17 +86,21 @@ struct EventFormView: View {
             
             VStack(alignment: .leading, spacing: 2) {
                 Text(Constants.eventStartTime)
-                    .font(.headline)                    
+                    .font(.headline)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.bottom, 2)
                 DatePicker(selection: $viewModel.eventStartTime) { EmptyView() }
                     .datePickerStyle(.compact) // or .graphical for a calendar style
-                    .padding(.vertical, 6)
+                    .padding(.top, 6)
                     .padding(.horizontal, 8)
                     .background(
                         RoundedRectangle(cornerRadius: 6)
                             .stroke(Color.gray.opacity(0.2))
                     )
+                    .environment(\.timeZone, viewModel.isUTC ? TimeZone(identifier: "UTC")! : TimeZone.current)
+                Text(viewModel.isUTC ? Constants.timeAsUTC : Constants.timeAsLocal)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
             }
             .padding()
 
@@ -107,10 +111,18 @@ struct EventFormView: View {
                 label: Constants.durationLabel,
             )
 
-            Toggle(isOn: $viewModel.isDefenseTimer) {
-                Text(Constants.toggleLabel)
-            }
-            .padding(.top, Constants.fieldTopPadding)
+            HStack{
+                VStack(alignment: .leading){
+                    Toggle(isOn: $viewModel.isDefenseTimer) {
+                        Text(Constants.toggleLabel)
+                    }
+                    .padding(.vertical, Constants.fieldTopPadding)
+                    Toggle(isOn: $viewModel.isUTC){
+                        Text(Constants.showInUTC)
+                    }
+                }
+                Spacer()
+            }.padding(.horizontal)
         }
     }
 
@@ -125,6 +137,7 @@ struct EventFormView: View {
                     pasteboard.setString(viewModel.resultText, forType: .string)
                 }
             }
+            .padding(.bottom)
     }
 
     // Builds the form's save and cancel buttons.
@@ -166,17 +179,18 @@ extension EventFormView {
         static let eventStartTime = "Entered Reinforcement at"
         static let planetLabel = "Planet Number"
         static let planetPlaceholder = "8"
-
+        static let showInUTC = "Show Time in UTC (Eve Time)"
         static let durationLabel = "Timer remaining to event"
         static let durationPlaceholder = "Time remaining (e.g., 1:12:30)"
-
+        static let timeAsUTC = "All times are in UTC (EVE Time)."
+        static let timeAsLocal = "All times are in your local Time Zone."
         static let toggleLabel = "Is defence timer"
 
         static let copyButton = "Copy"
         static let saveButton = "Save"
         static let cancelButton = "Cancel"
         static let formWidth: CGFloat = 300
-        static let formHeight: CGFloat = 400
+        static let formHeight: CGFloat = 450
         static let invalidInput = "Invalid input."
         static let planetNumberPattern = "^[1-9]\\d*$"
         static let fieldTopPadding: CGFloat = 8
@@ -201,3 +215,4 @@ extension EventFormView {
     )
 
 }
+

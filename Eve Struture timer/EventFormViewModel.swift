@@ -12,6 +12,14 @@ final class EventFormViewModel {
         didSet { validateSystemName() }
     }
 
+    var isUTC: Bool = true {
+        didSet {
+            if isAllValid {
+                calculateFutureTime()
+            }
+        }
+    }
+    
     /// User input for planet number. Validated on change.
     var planetNumber: String = "" {
         didSet { validatePlanetNumber() }
@@ -215,7 +223,7 @@ final class EventFormViewModel {
     /// Formats a Date object into a string using the specified date format and UTC timezone.
     private func formatDate(_ date: Date) -> String {
         let formatter = DateFormatter()
-        formatter.timeZone = TimeZone(abbreviation: "UTC")
+        formatter.timeZone = isUTC ? TimeZone(abbreviation: "UTC") : TimeZone.current
         formatter.dateFormat = Constants.dateFormat
         return formatter.string(from: date)
     }
