@@ -7,9 +7,9 @@
 
 // EventFormView.swift
 
-import SwiftUI
-import SwiftData
 import AppKit
+import SwiftData
+import SwiftUI
 
 /// A SwiftUI form view for creating or editing a reinforcement event.
 ///
@@ -17,24 +17,33 @@ import AppKit
 /// Uses bindings for modal presentation and a local ViewModel for managing state and logic.
 struct EventFormView: View {
     // MARK: - Environment
-    
+
     // Controls the sheet/modal visibility from the parent view.
     @Binding var isVisible: Bool
-    
+
     // Holds the view's state and logic for form inputs and validation.
     @State private var viewModel: EventFormViewModel
-    
+
     /// Initializes the EventFormView for creating or editing a reinforcement event.
     ///
     /// - Parameters:
     ///   - isVisible: Binding controlling the sheet/modal visibility.
     ///   - context: The model context used for data operations.
     ///   - selectedEvent: If non-nil, the event to edit; otherwise, prepares for a new event.
-    init(isVisible: Binding<Bool>, context: ModelContext, selectedEvent: ReinforcementTimeEvent? = nil) {
+    init(
+        isVisible: Binding<Bool>,
+        context: ModelContext,
+        selectedEvent: ReinforcementTimeEvent? = nil
+    ) {
         self._isVisible = isVisible
-        self._viewModel = State(initialValue: EventFormViewModel(context: context, editingEvent: selectedEvent))
+        self._viewModel = State(
+            initialValue: EventFormViewModel(
+                context: context,
+                editingEvent: selectedEvent
+            )
+        )
     }
-    
+
     // The main view content including input fields, result display, and action buttons.
     var body: some View {
         VStack {
@@ -42,22 +51,22 @@ struct EventFormView: View {
             resultView
             actionButtons
         }
-        .onChange(of: viewModel.timeToAdd) { _,_ in
+        .onChange(of: viewModel.timeToAdd) { _, _ in
             if viewModel.isAllValid {
                 viewModel.calculateFutureTime()
             }
         }
-        .onChange(of: viewModel.eventStartTime) { _,_ in
+        .onChange(of: viewModel.eventStartTime) { _, _ in
             if viewModel.isAllValid {
                 viewModel.calculateFutureTime()
-            }else{
+            } else {
                 print("not valid")
             }
         }
         .frame(width: Constants.formWidth, height: Constants.formHeight)
         .padding()
     }
-    
+
     // Builds and displays all text input fields and toggle for the form.
     private var inputFields: some View {
         VStack(alignment: .center, spacing: 4) {
@@ -67,7 +76,7 @@ struct EventFormView: View {
                 placeHolder: Constants.systemNamePlaceholder,
                 label: Constants.systemNameLabel,
             )
-            
+
             ValidationTextField(
                 text: $viewModel.planetNumber,
                 errorMessage: $viewModel.planetNumberError,
@@ -75,27 +84,36 @@ struct EventFormView: View {
                 label: Constants.planetLabel,
             )
             
-            ValidationTextField(
-                text: $viewModel.eventStartTime,
-                errorMessage: $viewModel.eventStartTimeError,
-                placeHolder: Constants.startTimePlaceholder,
-                label: Constants.startTimeLabel,
-            )
-            
+            VStack(alignment: .leading, spacing: 2) {
+                Text(Constants.eventStartTime)
+                    .font(.headline)                    
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.bottom, 2)
+                DatePicker(selection: $viewModel.eventStartTime) { EmptyView() }
+                    .datePickerStyle(.compact) // or .graphical for a calendar style
+                    .padding(.vertical, 6)
+                    .padding(.horizontal, 8)
+                    .background(
+                        RoundedRectangle(cornerRadius: 6)
+                            .stroke(Color.gray.opacity(0.2))
+                    )
+            }
+            .padding()
+
             ValidationTextField(
                 text: $viewModel.timeToAdd,
                 errorMessage: $viewModel.timeToAddError,
                 placeHolder: Constants.durationPlaceholder,
                 label: Constants.durationLabel,
             )
-            
+
             Toggle(isOn: $viewModel.isDefenseTimer) {
                 Text(Constants.toggleLabel)
             }
             .padding(.top, Constants.fieldTopPadding)
         }
     }
-    
+
     // Displays the computed result string and provides a copy context menu.
     private var resultView: some View {
         Text(viewModel.resultText)
@@ -108,7 +126,7 @@ struct EventFormView: View {
                 }
             }
     }
-    
+
     // Builds the form's save and cancel buttons.
     private var actionButtons: some View {
         HStack {
@@ -119,20 +137,20 @@ struct EventFormView: View {
             Spacer()
         }
     }
-    
+
     // Dismisses the form without saving.
     private func cancelAction() {
         isVisible = false
     }
-    
+
     // Saves a new or edited event if inputs are valid, then dismisses the form.
     private func saveEvent() {
         guard viewModel.isAllValid else {
             return
         }
-        
+
         viewModel.saveEvent()
-        
+
         isVisible = false
     }
 }
@@ -142,21 +160,18 @@ struct EventFormView: View {
 extension EventFormView {
     /// Shared constants for layout, labels, patterns, and formatting within EventFormView.
     struct Constants {
-                
+
         static let systemNameLabel = "System Name"
         static let systemNamePlaceholder = "Jita"
-        
+        static let eventStartTime = "Entered Reinforcement at"
         static let planetLabel = "Planet Number"
         static let planetPlaceholder = "8"
-        
-        static let startTimeLabel = "From Date (optional)"
-        static let startTimePlaceholder = "Enter from date (e.g., 24/06/2025)"
-        
+
         static let durationLabel = "Timer remaining to event"
         static let durationPlaceholder = "Time remaining (e.g., 1:12:30)"
-        
+
         static let toggleLabel = "Is defence timer"
-        
+
         static let copyButton = "Copy"
         static let saveButton = "Save"
         static let cancelButton = "Cancel"
@@ -169,18 +184,20 @@ extension EventFormView {
 }
 
 #Preview {
-    let context = try! ModelContainer(for: ReinforcementTimeEvent.self).mainContext
-    
+    let context = try! ModelContainer(for: ReinforcementTimeEvent.self)
+        .mainContext
+
     let mockEvent = ReinforcementTimeEvent(
-        dueDate: Date().addingTimeInterval(3600 * 24), // +1 day
+        dueDate: Date().addingTimeInterval(3600 * 24),  // +1 day
         systemName: "Jita",
         planet: 4,
         isDefence: false
     )
-    
-    EventFormView(
-        isVisible: .constant(true), context: context, selectedEvent: mockEvent
-    )
-    
-}
 
+    EventFormView(
+        isVisible: .constant(true),
+        context: context,
+        selectedEvent: mockEvent
+    )
+
+}

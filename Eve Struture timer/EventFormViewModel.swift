@@ -17,10 +17,8 @@ final class EventFormViewModel {
         didSet { validatePlanetNumber() }
     }
 
-    /// User input for event start time (e.g., 24/06/2025). Validated on change.
-    var eventStartTime: String = "" {
-        didSet { validateEventStartTime() }
-    }
+    /// User input for event start time
+    var eventStartTime: Date = Date()
 
     /// User input for additional time to add to the event (e.g., 1d2h30m). Validated on change.
     var timeToAdd: String = "" {
@@ -38,8 +36,6 @@ final class EventFormViewModel {
     /// Validation error message (or nil) for the planet number field.
     var planetNumberError: String? = nil
 
-    /// Validation error message (or nil) for the event start time field.
-    var eventStartTimeError: String? = nil
 
     /// Validation error message (or nil) for the time to add field.
     var timeToAddError: String? = nil
@@ -50,7 +46,6 @@ final class EventFormViewModel {
     @ObservationIgnored var isAllValid: Bool {
         systemNameError == nil &&
         planetNumberError == nil &&
-        eventStartTimeError == nil &&
         timeToAddError == nil
     }
 
@@ -58,9 +53,6 @@ final class EventFormViewModel {
 
     /// Result string shown to user with the calculated future date/time.
     var resultText: String = Constants.defaultResultText
-
-    /// Temporary storage for the calculated or selected event date.
-    var fromDate: Date? = nil
 
     // MARK: - Dependencies
 
@@ -81,7 +73,7 @@ final class EventFormViewModel {
         if let event = editingEvent {
             systemName = event.systemName
             planetNumber = "\(event.planet)"
-            fromDate = event.createdDate
+            eventStartTime = event.createdDate
             isDefenseTimer = event.isDefence
 
             let remainingTime = event.remainingTime
@@ -117,15 +109,6 @@ final class EventFormViewModel {
         }
     }
 
-    /// Validates the event start time and sets the error message.
-    func validateEventStartTime() {
-        if !eventStartTime.isEmpty && eventStartTime.range(of: Constants.optionalTimePattern, options: .regularExpression) == nil {
-            eventStartTimeError = Constants.optionalTimeError
-        } else {
-            eventStartTimeError = nil
-        }
-    }
-
     /// Validates the time to add and sets the error message.
     func validateTimeToAdd() {
         if timeToAdd.range(of: Constants.timeRemaningPattern, options: .regularExpression) == nil {
@@ -140,17 +123,13 @@ final class EventFormViewModel {
     /// Calculates the resulting event date/time based on user inputs.
     /// Updates resultText and fromDate accordingly.
     func calculateFutureTime() {
-        guard let startDate = createStartDate() else {
-            resultText = Constants.invalidEventTimeMessage
-            return
-        }
-        fromDate = startDate
+        
         
         guard let timeOffset = parseTimeOffset() else {
             resultText = Constants.invalidAddTimeMessage
             return
         }
-        let finalDate = startDate.addingTimeInterval(timeOffset)
+        let finalDate = eventStartTime.addingTimeInterval(timeOffset)
         resultText = formatDate(finalDate)
     }
 
@@ -162,19 +141,15 @@ final class EventFormViewModel {
             return
         }
 
-        guard let date = fromDate else {
-            resultText = Constants.badDate
-            return
-        }
 
         if let event = editingEvent {
-            updateEvent(event, with: date)
+            updateEvent(event, with: eventStartTime)
         } else if let existingEvent = fetchEvent(systemName: systemName, planet: planet) {
-            updateEvent(existingEvent, with: date)
+            updateEvent(existingEvent, with: eventStartTime)
         } else {
             createNewEvent(systemName: systemName,
                            planet: planet,
-                           date: date,
+                           date: eventStartTime,
                            timeToAdd: timeToAdd,
                            isDefence: isDefenseTimer)
         }
@@ -224,17 +199,6 @@ final class EventFormViewModel {
         return try? context.fetch(fetchDescriptor).first
     }
 
-    /// Creates a start date based on the current date and the eventStartTime input (dd/mm/yyyy).
-    /// Returns current date if parsing fails.
-    private func createStartDate() -> Date? {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "dd/MM/yyyy"
-        formatter.timeZone = TimeZone.current
-        if let date = formatter.date(from: eventStartTime) {
-            return date
-        }
-        return Date()
-    }
 
     /// Parses the timeToAdd string into a TimeInterval (seconds).
     private func parseTimeOffset() -> TimeInterval? {
