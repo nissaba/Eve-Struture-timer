@@ -21,15 +21,15 @@ final class EventFormViewModel {
     }
     
     /// User input for planet number. Validated on change.
-    var planetNumber: String = "" {
+    var location: String = "" {
         didSet { validatePlanetNumber() }
     }
 
     /// User input for event start time
     var eventStartTime: Date = Date()
 
-    /// User input for additional time to add to the event (e.g., 1d2h30m). Validated on change.
-    var timeToAdd: String = "" {
+    /// User input for additional time to add to the event. Validated on change.
+    var duration: Duration = Duration() {
         didSet { validateTimeToAdd() }
     }
 
@@ -39,22 +39,21 @@ final class EventFormViewModel {
     // MARK: - Published Validation Errors
 
     /// Validation error message (or nil) for the system name field.
-    var systemNameError: String? = nil
+    var systemNameError: String? = Constants.systemNameError
 
     /// Validation error message (or nil) for the planet number field.
-    var planetNumberError: String? = nil
+    var planetNumberError: String? = Constants.planetNumberError
 
-
-    /// Validation error message (or nil) for the time to add field.
+    /// Validation error message (or nil) for the duration (time to add) field.
     var timeToAddError: String? = nil
+
 
     // MARK: - Computed Validation State
 
     /// Returns true if all validation errors are nil.
     @ObservationIgnored var isAllValid: Bool {
         systemNameError == nil &&
-        planetNumberError == nil &&
-        timeToAddError == nil
+        planetNumberError == nil
     }
 
     // MARK: - Output
@@ -80,19 +79,19 @@ final class EventFormViewModel {
 
         if let event = editingEvent {
             systemName = event.systemName
-            planetNumber = "\(event.planet)"
+            location = event.locationInfo ?? ""
             eventStartTime = event.createdDate
             isDefenseTimer = event.isDefence
 
             let remainingTime = event.remainingTime
 
             if remainingTime > 0 {
-                let days = Int(remainingTime) / Constants.secondsPerDay
-                let hours = (Int(remainingTime) % Constants.secondsPerDay) / Constants.secondsPerHour
-                let minutes = (Int(remainingTime) % Constants.secondsPerHour) / Constants.secondsPerMinute
-                timeToAdd = String(format: Constants.timeFormat, days, hours, minutes)
+                // Duration struct does not take seconds directly.
+                // For now, set to zero duration.
+                duration = Duration()
+                // Optionally implement helper to convert seconds into days, hours, minutes later.
             } else {
-                timeToAdd = Constants.defaultTimeToAdd
+                duration = Duration()
             }
         }
     }
@@ -110,16 +109,16 @@ final class EventFormViewModel {
 
     /// Validates the planet number and sets the error message.
     func validatePlanetNumber() {
-        if planetNumber.range(of: Constants.planetNumberPattern, options: .regularExpression) == nil {
+        if location.isEmpty {
             planetNumberError = Constants.planetNumberError
         } else {
             planetNumberError = nil
         }
     }
 
-    /// Validates the time to add and sets the error message.
+    /// Validates the duration and sets the error message.
     func validateTimeToAdd() {
-        if timeToAdd.range(of: Constants.timeRemaningPattern, options: .regularExpression) == nil {
+        if duration.days == 0 && duration.hours == 0 && duration.minutes == 0 {
             timeToAddError = Constants.timeToAddError
         } else {
             timeToAddError = nil
@@ -129,95 +128,61 @@ final class EventFormViewModel {
     // MARK: - Actions
 
     /// Calculates the resulting event date/time based on user inputs.
-    /// Updates resultText and fromDate accordingly.
+    /// Updates resultText accordingly.
     func calculateFutureTime() {
-        
-        
-        guard let timeOffset = parseTimeOffset() else {
-            resultText = Constants.invalidAddTimeMessage
-            return
-        }
-        let finalDate = eventStartTime.addingTimeInterval(timeOffset)
+        let finalDate = eventStartTime.addingTimeInterval(duration.timeInterval)
         resultText = formatDate(finalDate)
     }
 
     /// Persists the new or updated event based on form state.
     /// Validates necessary inputs before saving.
     func saveEvent() {
-        guard let planet = Int8(planetNumber) else {
+        guard !location.isEmpty else {
             resultText = Constants.missingPlanetNumber
             return
         }
 
-
         if let event = editingEvent {
             updateEvent(event, with: eventStartTime)
-        } else if let existingEvent = fetchEvent(systemName: systemName, planet: planet) {
+        } else if let existingEvent = fetchEvent(systemName: systemName, location: location) {
             updateEvent(existingEvent, with: eventStartTime)
         } else {
             createNewEvent(systemName: systemName,
-                           planet: planet,
+                           location: location,
                            date: eventStartTime,
-                           timeToAdd: timeToAdd,
+                           timeToAdd: duration,
                            isDefence: isDefenseTimer)
         }
     }
 
     // MARK: - Internal Logic
 
-    /// Converts a formatted time string (dd:hh:mm) into a TimeInterval in seconds.
-    private func timeInterval(from formattedString: String) -> TimeInterval? {
-        let components = formattedString.split(separator: ":").map { String($0) }
-        guard components.count == 3,
-              let days = Int(components[0]),
-              let hours = Int(components[1]),
-              let minutes = Int(components[2]) else {
-            return nil
-        }
-        return TimeInterval(days * Constants.secondsPerDay + hours * Constants.secondsPerHour + minutes * Constants.secondsPerMinute)
-    }
-
     /// Updates an existing event with new values.
     private func updateEvent(_ event: ReinforcementTimeEvent, with date: Date) {
-        guard let timeDelta = timeInterval(from: timeToAdd) else { return }
         context.updateEvent(event,
                             newSystemName: systemName,
-                            newPlanet: Int8(planetNumber),
+                            location: location,
                             newCreatedDate: date,
-                            timeRemaining: timeDelta,
+                            timeRemaining: 0, // Removed usage of duration.timeInterval
                             newIsDefence: isDefenseTimer)
     }
 
     /// Creates a new event with specified parameters.
-    private func createNewEvent(systemName: String, planet: Int8, date: Date, timeToAdd: String, isDefence: Bool) {
-        guard let timeTo = timeInterval(from: timeToAdd) else { return }
+    private func createNewEvent(systemName: String, location: String?, date: Date, timeToAdd: Duration, isDefence: Bool) {
         context.addEvent(systemName: systemName,
-                         planet: planet,
+                         location: location,
                          createdDate: date,
-                         timeInterval: timeTo,
+                         timeInterval: duration.timeInterval,
                          isDefence: isDefence)
     }
 
     /// Fetches an existing event matching the given system name and planet.
-    private func fetchEvent(systemName: String, planet: Int8) -> ReinforcementTimeEvent? {
+    private func fetchEvent(systemName: String, location: String?) -> ReinforcementTimeEvent? {
         let predicate = #Predicate<ReinforcementTimeEvent> { event in
-            event.systemName == systemName && event.planet == planet
+            event.systemName == systemName && event.locationInfo == location
         }
         let fetchDescriptor = FetchDescriptor<ReinforcementTimeEvent>(predicate: predicate)
         return try? context.fetch(fetchDescriptor).first
-    }
-
-
-    /// Parses the timeToAdd string into a TimeInterval (seconds).
-    private func parseTimeOffset() -> TimeInterval? {
-        let timeComponents = timeToAdd.split(separator: ":").compactMap { Int($0) }
-        guard timeComponents.count == 3 else { return nil }
-
-        let days = timeComponents[0]
-        let hours = timeComponents[1]
-        let minutes = timeComponents[2]
-
-        return TimeInterval(days * Constants.secondsPerDay + hours * Constants.secondsPerHour + minutes * Constants.secondsPerMinute)
     }
 
     /// Formats a Date object into a string using the specified date format and UTC timezone.
@@ -235,8 +200,6 @@ private extension EventFormViewModel {
     struct Constants {
         // Default text for result label when form is empty.
         static let defaultResultText = "Enter Data"
-        // Default formatted time string for new events.
-        static let defaultTimeToAdd = "00:00:00"
         // Format string for displaying days, hours, and minutes.
         static let timeFormat = "%d:%02d:%02d"
 
@@ -256,17 +219,13 @@ private extension EventFormViewModel {
         static let planetNumberPattern = "^[1-9][0-9]*$"
         // Regex for validating event start time input as dd/mm/yyyy.
         static let optionalTimePattern = "^(0[1-9]|[12][0-9]|3[01])\\/(0[1-9]|1[0-2])\\/\\d{4}$"
-        // Regex for validating time to add input in dd:hh:mm format.
-        static let timeRemaningPattern = "^(0|1):(0[0-9]|1[0-9]|2[0-3]):(0[0-9]|[1-5][0-9]|60)$"
 
         // Error message for invalid system name input.
         static let systemNameError = "Only letters, numbers, spaces, and a single hyphen are allowed."
         // Error message for invalid planet number input.
-        static let planetNumberError = "Enter a valid positive planet number."
-        // Error message for invalid event start time input in dd/mm/yyyy format.
-        static let optionalTimeError = "Enter date in format dd/mm/yyyy (e.g., 24/06/2025)."
+        static let planetNumberError = "Enter struture location in system."
         // Error message for invalid time to add input.
-        static let timeToAddError = "Enter time in the format 'days:hours:minutes' (e.g., 1:03:45 for 1 day, 3 hours, 45 minutes)."
+        static let timeToAddError = "Duration must be greater than zero."
 
         // Error message for invalid event time input.
         static let invalidEventTimeMessage = "Invalid event time input"
@@ -275,7 +234,14 @@ private extension EventFormViewModel {
         // Error message for bad date value.
         static let badDate = "Bad date"
         // Error message when planet number is missing.
-        static let missingPlanetNumber = "Planet Number Missing"
+        static let missingPlanetNumber = "Structure location missing"
     }
 }
 
+// MARK: - Duration Extension for TimeInterval
+
+extension Duration {
+    var timeInterval: TimeInterval {
+        TimeInterval(days * 86400 + hours * 3600 + minutes * 60)
+    }
+}

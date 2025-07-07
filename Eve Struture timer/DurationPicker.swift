@@ -68,7 +68,7 @@ struct PreviewWrapper: View {
 }
 
 
-struct Duration {
+struct Duration: Equatable {
     var days: Int = 0
     var hours: Int = 0
     var minutes: Int = 0

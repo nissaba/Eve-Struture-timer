@@ -79,10 +79,12 @@ private extension EventRow {
                     .fontWeight(.bold)
                     .font(.headline)
                     .strikethrough(event.isPastDue)
-                Text(" - Planet \(event.planet)")
-                    .fontWeight(.regular)
-                    .font(.headline)
-                    .strikethrough(event.isPastDue)
+                if let info = event.locationInfo{
+                    Text(" - Location \(info)")
+                        .fontWeight(.regular)
+                        .font(.headline)
+                        .strikethrough(event.isPastDue)
+                }
             }
             Spacer()
             Text(event.isDefence ? "Defence" : "Offence")
@@ -130,7 +132,7 @@ private extension EventRow {
             let event = ReinforcementTimeEvent(
                 dueDate: Date().addingTimeInterval(3600 * 24),
                 systemName: "Jita",
-                planet: 4,
+                locationInfo: "4",
                 isDefence: false
             )
             

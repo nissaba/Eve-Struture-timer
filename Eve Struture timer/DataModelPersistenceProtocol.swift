@@ -17,23 +17,23 @@ protocol EventPersistence {
     /// Adds a new reinforcement time event.
     /// - Parameters:
     ///   - systemName: The name of the system where the event takes place.
-    ///   - planet: The planet number (1-8).
+    ///   - location: where the struture is located
     ///   - createdDate: The date the event was created.
     ///   - timeInterval: Time interval until the event is due.
     ///   - isDefence: A boolean indicating whether the event is defensive.
-    func addEvent(systemName: String, planet: Int8, createdDate: Date, timeInterval: TimeInterval, isDefence: Bool)
+    func addEvent(systemName: String, location: String?, createdDate: Date, timeInterval: TimeInterval, isDefence: Bool)
     
     /// Updates an existing reinforcement time event.
     /// - Parameters:
     ///   - event: The event to update.
     ///   - newSystemName: Optional new system name.
-    ///   - newPlanet: Optional new planet number.
+    ///   - location: where the struture is located
     ///   - newCreatedDate: Optional new creation date.
     ///   - timeRemaining: Optional new time remaining (used to recalculate due date).
     ///   - newIsDefence: Optional new defensive status.
     func updateEvent(_ event: ReinforcementTimeEvent,
                      newSystemName: String?,
-                     newPlanet: Int8?,
+                     location: String?,
                      newCreatedDate: Date?,
                      timeRemaining: TimeInterval?,
                      newIsDefence: Bool?)
@@ -58,14 +58,15 @@ extension ModelContext: EventPersistence {
         }
     }
 
-    func addEvent(systemName: String, planet: Int8, createdDate: Date, timeInterval: TimeInterval, isDefence: Bool) {
+    func addEvent(systemName: String, location: String?, createdDate: Date, timeInterval: TimeInterval, isDefence: Bool) {
         var dueDate = createdDate
         dueDate.addTimeInterval(timeInterval)
+        
         let newEvent = ReinforcementTimeEvent(
             createdDate: createdDate,
             dueDate: dueDate,
             systemName: systemName,
-            planet: planet,
+            locationInfo: location,
             isDefence: isDefence
         )
         insert(newEvent)
@@ -74,7 +75,7 @@ extension ModelContext: EventPersistence {
 
     func updateEvent(_ event: ReinforcementTimeEvent,
                      newSystemName: String? = nil,
-                     newPlanet: Int8? = nil,
+                     location: String? = nil,
                      newCreatedDate: Date? = nil,
                      timeRemaining: TimeInterval? = nil,
                      newIsDefence: Bool? = nil) {
@@ -82,8 +83,8 @@ extension ModelContext: EventPersistence {
         if let newSystemName = newSystemName {
             event.systemName = newSystemName
         }
-        if let newPlanet = newPlanet {
-            event.planet = newPlanet
+        if let newPlanet = location {
+            event.locationInfo = newPlanet
         }
         if let newDate = newCreatedDate {
             event.createdDate = newDate

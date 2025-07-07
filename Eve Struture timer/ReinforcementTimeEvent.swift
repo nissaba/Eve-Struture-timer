@@ -26,7 +26,7 @@ class ReinforcementTimeEvent: Identifiable {
     var systemName: String
     
     /// The planet number associated with the event.
-    var planet: Int8
+    var locationInfo: String?
     
     /// A flag indicating whether this is a defensive event (`true`) or an offensive event (`false`).
     var isDefence: Bool
@@ -39,11 +39,11 @@ class ReinforcementTimeEvent: Identifiable {
     ///   - systemName: The name of the system where the event occurs.
     ///   - planet: The planet number associated with the event.
     ///   - isDefence: A Boolean indicating whether the event is defensive (`true`) or offensive (`false`).
-    init(createdDate: Date = Date(), dueDate: Date, systemName: String, planet: Int8, isDefence: Bool) {
+    init(createdDate: Date = Date(), dueDate: Date, systemName: String, locationInfo: String?, isDefence: Bool) {
         self.createdDate = createdDate
         self.dueDate = dueDate
         self.systemName = systemName
-        self.planet = planet
+        self.locationInfo = locationInfo
         self.isDefence = isDefence
     }
     
@@ -119,7 +119,9 @@ class ReinforcementTimeEvent: Identifiable {
         event.title = "Reinforcement: \(self.systemName)"
         event.startDate = self.dueDate
         event.endDate = self.dueDate.addingTimeInterval(15 * 60)
-        event.notes = "Planet \(self.planet)"
+        if let info = self.locationInfo {
+            event.notes = "Location: \(info)"
+        }
         event.calendar = calendar
 
         if !calendar.allowsContentModifications {

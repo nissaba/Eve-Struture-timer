@@ -51,7 +51,7 @@ struct EventFormView: View {
             resultView
             actionButtons
         }
-        .onChange(of: viewModel.timeToAdd) { _, _ in
+        .onChange(of: viewModel.duration) { _, _ in
             if viewModel.isAllValid {
                 viewModel.calculateFutureTime()
             }
@@ -78,7 +78,7 @@ struct EventFormView: View {
             )
 
             ValidationTextField(
-                text: $viewModel.planetNumber,
+                text: $viewModel.location,
                 errorMessage: $viewModel.planetNumberError,
                 placeHolder: Constants.planetPlaceholder,
                 label: Constants.planetLabel,
@@ -103,13 +103,11 @@ struct EventFormView: View {
                     .foregroundStyle(.secondary)
             }
             .padding()
-
-            ValidationTextField(
-                text: $viewModel.timeToAdd,
-                errorMessage: $viewModel.timeToAddError,
-                placeHolder: Constants.durationPlaceholder,
-                label: Constants.durationLabel,
-            )
+            
+            HStack {
+                Text("Duration")
+                DurationPicker(duration: $viewModel.duration)
+            }
 
             HStack{
                 VStack(alignment: .leading){
@@ -177,11 +175,10 @@ extension EventFormView {
         static let systemNameLabel = "System Name"
         static let systemNamePlaceholder = "Jita"
         static let eventStartTime = "Entered Reinforcement at"
-        static let planetLabel = "Planet Number"
-        static let planetPlaceholder = "8"
+        static let planetLabel = "Location Information"
+        static let planetPlaceholder = "planet 8 or Fortizar near the Sun..."
         static let showInUTC = "Show Time in UTC (Eve Time)"
         static let durationLabel = "Timer remaining to event"
-        static let durationPlaceholder = "Time remaining (e.g., 1:12:30)"
         static let timeAsUTC = "All times are in UTC (EVE Time)."
         static let timeAsLocal = "All times are in your local Time Zone."
         static let toggleLabel = "Is defence timer"
@@ -204,7 +201,7 @@ extension EventFormView {
     let mockEvent = ReinforcementTimeEvent(
         dueDate: Date().addingTimeInterval(3600 * 24),  // +1 day
         systemName: "Jita",
-        planet: 4,
+        locationInfo: "4",
         isDefence: false
     )
 

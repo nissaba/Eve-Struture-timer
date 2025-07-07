@@ -110,15 +110,15 @@ extension ReinforcementTimeEvent {
     static let example = ReinforcementTimeEvent(
         dueDate: Date().addingTimeInterval(3600),
         systemName: "Jita",
-        planet: 4,
+        locationInfo: "4",
         isDefence: false
     )
     
     /// An array of sample reinforcement time events for testing and previews.
     static let sampleItems: [ReinforcementTimeEvent] = [
         .example,
-        ReinforcementTimeEvent(dueDate: Date().addingTimeInterval(-1800), systemName: "Amamake", planet: 2,   isDefence: true),
-        ReinforcementTimeEvent(dueDate: Date().addingTimeInterval(7200), systemName: "Rens", planet: 3,  isDefence: false)
+        ReinforcementTimeEvent(dueDate: Date().addingTimeInterval(-1800), systemName: "Amamake", locationInfo: "2",   isDefence: true),
+        ReinforcementTimeEvent(dueDate: Date().addingTimeInterval(7200), systemName: "Rens", locationInfo: "3",  isDefence: false)
     ]
 }
 
