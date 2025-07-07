@@ -25,7 +25,7 @@ struct DurationPicker: View {
             HStack {
                 Spacer()
                 // Days
-                CustomNumberPicker(value: $days, maxValue: 1)
+                CustomNumberPicker(value: $days, maxValue: 7)
                 Text(":")
                 // Hours
                 CustomNumberPicker(value: $hours, maxValue: 23)
