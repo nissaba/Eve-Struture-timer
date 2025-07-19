@@ -56,7 +56,7 @@ struct EventFormView: View {
                 viewModel.calculateFutureTime()
             }
         }
-        .onChange(of: viewModel.eventStartTime) { _, _ in
+        .onChange(of: viewModel.eventStartDate) { _, _ in
             if viewModel.isAllValid {
                 viewModel.calculateFutureTime()
             } else {
@@ -89,7 +89,7 @@ struct EventFormView: View {
                     .font(.headline)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.bottom, 2)
-                DatePicker(selection: $viewModel.eventStartTime) { EmptyView() }
+                DatePicker(selection: $viewModel.eventStartDate) { EmptyView() }
                     .datePickerStyle(.compact) // or .graphical for a calendar style
                     .padding(.top, 6)
                     .padding(.horizontal, 8)

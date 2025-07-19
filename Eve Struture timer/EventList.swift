@@ -19,6 +19,10 @@ struct EventList: View {
     @State private var showForm = false
     /// Flags whether a delete action has been requested for the selected event.
     @State private var deleteRequested = false
+    /// Controls the presentation of an error alert.
+    @State private var showErrorAlert = false
+    /// Holds the error message to display in the alert.
+    @State private var errorMessage: String? = nil
     
     
     /// The main view body showing a navigation stack with a scrollable list of events.
@@ -57,6 +61,7 @@ struct EventList: View {
             .onChange(of: deleteRequested) { _, newValue in
                 guard newValue == true, let event = selected else { return }
                 context.deleteEvent(event)
+                event.deleteCalendarEvent()
                 selected = nil
                 deleteRequested = false
             }
@@ -67,6 +72,13 @@ struct EventList: View {
         .focusedSceneValue(\.selectedEvent, $selected)
         .focusedSceneValue(\.showSheet, $showForm)
         .focusedSceneValue(\.deleteRequested, $deleteRequested)
+        .alert("Error", isPresented: $showErrorAlert, actions: {
+            Button("OK", role: .cancel) {}
+        }, message: {
+            if let errorMessage {
+                Text(errorMessage)
+            }
+        })
         
     }
     
@@ -93,7 +105,17 @@ struct EventList: View {
                     Label("Edit", systemImage: "square.and.pencil")
                 }
                 Button(action: {
-                    event.addToCalendar()
+                    Task {
+                        do {
+                            let success = await event.addToCalendar()
+                            if success {
+                                try context.save()
+                            }
+                        } catch {
+                            errorMessage = error.localizedDescription
+                            showErrorAlert = true
+                        }
+                    }
                 }) {
                     Label("Add to Calendar", systemImage: "calendar.badge.plus")
                 }

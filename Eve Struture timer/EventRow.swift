@@ -12,6 +12,8 @@ import AppKit
 /// A view that displays information for a single reinforcement event.
 /// Highlights the event if selected, and provides actions to add the event to the calendar or delete it.
 struct EventRow: View {
+    /// The Core Data model context used for CRUD operations.
+    @Environment(\.modelContext) private var context
     /// The reinforcement event to display.
     let event: ReinforcementTimeEvent
     
@@ -106,7 +108,19 @@ private extension EventRow {
             }
             Spacer()
             Button {
-                event.addToCalendar()
+                Task{
+                 let success = await event.addToCalendar()
+                    if success {
+                        print("Event added to calendar")
+                        //save and if error show an alert
+                        do{
+                           try context.save()
+                        }catch {
+                            calendarAlertMessage = "Failed to save event to calendar: \(error.localizedDescription)"
+                            showingCalendarAlert = true
+                        }
+                    }
+                }
             } label: {
                 Image(systemName: "calendar.badge.plus")
                     .font(.title3)

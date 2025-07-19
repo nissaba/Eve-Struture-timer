@@ -14,6 +14,15 @@ struct DurationPicker: View {
     @State var hours: Int = 0
     @State var minutes: Int = 0
     @Binding var duration: Duration
+    
+    init(duration: Binding<Duration>) {
+        self._duration = duration
+        let value = duration.wrappedValue
+        self._days = State(initialValue: value.days)
+        self._hours = State(initialValue: value.hours)
+        self._minutes = State(initialValue: value.minutes)
+    }
+    
     var body: some View {
         VStack{
             HStack(spacing: 30){

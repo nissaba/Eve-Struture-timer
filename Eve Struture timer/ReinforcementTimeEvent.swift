@@ -31,6 +31,9 @@ class ReinforcementTimeEvent: Identifiable {
     /// A flag indicating whether this is a defensive event (`true`) or an offensive event (`false`).
     var isDefence: Bool
     
+    /// A id to a event that was created in the calendar
+    var calendarEventUUID: String?
+    
     /// Initializes a new reinforcement time event.
     ///
     /// - Parameters:
@@ -72,37 +75,54 @@ class ReinforcementTimeEvent: Identifiable {
     
     /// Requests access and attempts to add the reinforcement event to the user's calendar.
     ///
-    /// Handles permission requests for calendar access and creates the event if access is granted.
-    func addToCalendar() {
+    /// This async function handles permission requests for calendar access and creates the event if access is granted.
+    /// - Returns: A Boolean indicating whether the event was successfully added to the calendar.
+    func addToCalendar() async -> Bool {
         let store = EKEventStore()
-       
-        if #available(macOS 14, *) {
-            store.requestFullAccessToEvents { [self, store] hasAccess, error in
-                if hasAccess {
-                    print("Access granted")
-                    let calendar = store.defaultCalendarForNewEvents
-                    guard let calendar = calendar else {
-                        print("No default calendar available.")
-                        return
+        
+        do {
+            let hasAccess: Bool
+            if #available(macOS 14, *) {
+                hasAccess = try await withCheckedThrowingContinuation { continuation in
+                    store.requestFullAccessToEvents { granted, error in
+                        if let error = error {
+                            continuation.resume(throwing: error)
+                        } else {
+                            continuation.resume(returning: granted)
+                        }
                     }
-                    self.createEvent(using: store, calendar: calendar)
-                } else {
-                    print("Calendar access denied: \(error?.localizedDescription ?? "unknown error")")
+                }
+            } else {
+                hasAccess = try await withCheckedThrowingContinuation { continuation in
+                    store.requestAccess(to: .event) { granted, error in
+                        if let error = error {
+                            continuation.resume(throwing: error)
+                        } else {
+                            continuation.resume(returning: granted)
+                        }
+                    }
                 }
             }
-        } else {
-            store.requestAccess(to: .event) { [unowned self] granted, error in
-                if granted {
-                    let calendar = store.defaultCalendarForNewEvents
-                    guard let calendar = calendar else {
-                        print("No default calendar available.")
-                        return
-                    }
-                    createEvent(using: store, calendar: calendar)
-                } else {
-                    print("Calendar access denied: \(error?.localizedDescription ?? "unknown error")")
-                }
+            
+            guard hasAccess else {
+                print("Calendar access denied.")
+                return false
             }
+            
+            guard let calendar = store.defaultCalendarForNewEvents else {
+                print("No default calendar available.")
+                return false
+            }
+            
+            let success = createEvent(using: store, calendar: calendar)
+            if success {
+                print("Event added to calendar.")
+            }
+            return success
+            
+        } catch {
+            print("Failed to get calendar access: \(error.localizedDescription)")
+            return false
         }
     }
 
@@ -114,7 +134,8 @@ class ReinforcementTimeEvent: Identifiable {
     ///
     /// This method sets the event title, start and end dates, notes, and calendar.
     /// It checks for calendar permissions before attempting to save.
-    private func createEvent(using store: EKEventStore, calendar: EKCalendar) {
+    /// - Returns: `true` if the event was successfully saved, otherwise `false`.
+    private func createEvent(using store: EKEventStore, calendar: EKCalendar) -> Bool {
         let event = EKEvent(eventStore: store)
         event.title = "Reinforcement: \(self.systemName)"
         event.startDate = self.dueDate
@@ -126,16 +147,19 @@ class ReinforcementTimeEvent: Identifiable {
 
         if !calendar.allowsContentModifications {
             print("Error: The calendar does not allow adding events.")
-            return
+            return false
         }
         print("Calendar: \(calendar.title), allows modifications: \(calendar.allowsContentModifications)")
         print("Start date: \(String(describing: event.startDate)), End date: \(String(describing: event.endDate))")
 
         do {
             try store.save(event, span: .thisEvent)
-            print("Event added to calendar.")
+            self.calendarEventUUID = event.eventIdentifier
+            
+            return true
         } catch {
             print("Failed to save event. Error: \(error). Possible causes: permissions not granted, invalid calendar, or invalid dates.")
+            return false
         }
     }
     
@@ -150,5 +174,77 @@ class ReinforcementTimeEvent: Identifiable {
             print("Calendar: \(calendar.title), Writable: \(calendar.allowsContentModifications), Type: \(calendar.type.rawValue)")
         }
     }
+    
+    /// Updates the event in the user's calendar if `calendarEventUUID` is set.
+    ///
+    /// This method will fetch the event using its identifier and update its fields to reflect the current object's state.
+    func updateCalendarEvent() {
+        guard let uuid = calendarEventUUID else {
+            print("No calendarEventUUID set; cannot update event.")
+            return
+        }
+        let store = EKEventStore()
+        // macOS 14 and later: requestFullAccessToEvents, otherwise requestAccess(to:)
+        let accessHandler: (Bool, Error?) -> Void = { [self] granted, error in
+            if granted {
+                if let event = store.event(withIdentifier: uuid) {
+                    event.title = "Reinforcement: \(self.systemName)"
+                    event.startDate = self.dueDate
+                    event.endDate = self.dueDate.addingTimeInterval(15 * 60)
+                    if let info = self.locationInfo {
+                        event.notes = "Location: \(info)"
+                    } else {
+                        event.notes = nil
+                    }
+                    do {
+                        try store.save(event, span: .thisEvent)
+                        print("Event updated in calendar.")
+                    } catch {
+                        print("Failed to update event. Error: \(error)")
+                    }
+                } else {
+                    print("No event found in calendar with identifier: \(uuid)")
+                }
+            } else {
+                print("Calendar access denied: \(error?.localizedDescription ?? "unknown error")")
+            }
+        }
+        if #available(macOS 14, *) {
+            store.requestFullAccessToEvents(completion: accessHandler)
+        } else {
+            store.requestAccess(to: .event, completion: accessHandler)
+        }
+    }
+    
+    /// Deletes the calendar event associated with this reinforcement event, if `calendarEventUUID` is set.
+    ///
+    /// Requests permission to access the calendar, then removes the event by its identifier.
+    func deleteCalendarEvent() {
+        guard let uuid = calendarEventUUID else {
+            print("No calendarEventUUID set; cannot delete event.")
+            return
+        }
+        let store = EKEventStore()
+        let accessHandler: (Bool, Error?) -> Void = { granted, error in
+            if granted {
+                if let event = store.event(withIdentifier: uuid) {
+                    do {
+                        try store.remove(event, span: .thisEvent)
+                        print("Event deleted from calendar.")
+                    } catch {
+                        print("Failed to delete event. Error: \(error)")
+                    }
+                } else {
+                    print("No event found in calendar with identifier: \(uuid)")
+                }
+            } else {
+                print("Calendar access denied: \(error?.localizedDescription ?? "unknown error")")
+            }
+        }
+        if #available(macOS 14, *) {
+            store.requestFullAccessToEvents(completion: accessHandler)
+        } else {
+            store.requestAccess(to: .event, completion: accessHandler)
+        }
+    }
 }
-

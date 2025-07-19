@@ -95,6 +95,9 @@ extension ModelContext: EventPersistence {
         if let timeRemaining = timeRemaining {
             event.dueDate = event.createdDate.addingTimeInterval(timeRemaining)
         }
+        if event.calendarEventUUID != nil {
+            event.updateCalendarEvent()
+        }
         
         saveChanges()
     }

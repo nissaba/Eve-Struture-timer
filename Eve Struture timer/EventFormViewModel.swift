@@ -26,12 +26,14 @@ final class EventFormViewModel {
     }
 
     /// User input for event start time
-    var eventStartTime: Date = Date()
+    var eventStartDate: Date = Date()
 
     /// User input for additional time to add to the event. Validated on change.
     var duration: Duration = Duration() {
         didSet { validateTimeToAdd() }
     }
+    
+    private var dueDate: Date?
 
     /// Indicates if this is a defense timer event.
     var isDefenseTimer: Bool = false
@@ -80,16 +82,12 @@ final class EventFormViewModel {
         if let event = editingEvent {
             systemName = event.systemName
             location = event.locationInfo ?? ""
-            eventStartTime = event.createdDate
+            eventStartDate = event.createdDate
             isDefenseTimer = event.isDefence
 
             let remainingTime = event.remainingTime
-
             if remainingTime > 0 {
-                // Duration struct does not take seconds directly.
-                // For now, set to zero duration.
-                duration = Duration()
-                // Optionally implement helper to convert seconds into days, hours, minutes later.
+                duration = Duration.init(from: remainingTime)
             } else {
                 duration = Duration()
             }
@@ -130,7 +128,7 @@ final class EventFormViewModel {
     /// Calculates the resulting event date/time based on user inputs.
     /// Updates resultText accordingly.
     func calculateFutureTime() {
-        let finalDate = eventStartTime.addingTimeInterval(duration.timeInterval)
+        let finalDate = eventStartDate.addingTimeInterval(duration.timeInterval)
         resultText = formatDate(finalDate)
     }
 
@@ -143,13 +141,14 @@ final class EventFormViewModel {
         }
 
         if let event = editingEvent {
-            updateEvent(event, with: eventStartTime)
+           
+            updateEvent(event)
         } else if let existingEvent = fetchEvent(systemName: systemName, location: location) {
-            updateEvent(existingEvent, with: eventStartTime)
+            updateEvent(existingEvent)
         } else {
             createNewEvent(systemName: systemName,
                            location: location,
-                           date: eventStartTime,
+                           date: eventStartDate,
                            timeToAdd: duration,
                            isDefence: isDefenseTimer)
         }
@@ -158,12 +157,12 @@ final class EventFormViewModel {
     // MARK: - Internal Logic
 
     /// Updates an existing event with new values.
-    private func updateEvent(_ event: ReinforcementTimeEvent, with date: Date) {
+    private func updateEvent(_ event: ReinforcementTimeEvent) {
         context.updateEvent(event,
                             newSystemName: systemName,
                             location: location,
-                            newCreatedDate: date,
-                            timeRemaining: 0, // Removed usage of duration.timeInterval
+                            newCreatedDate: eventStartDate,
+                            timeRemaining: duration.timeInterval,
                             newIsDefence: isDefenseTimer)
     }
 
@@ -245,3 +244,4 @@ extension Duration {
         TimeInterval(days * 86400 + hours * 3600 + minutes * 60)
     }
 }
+
