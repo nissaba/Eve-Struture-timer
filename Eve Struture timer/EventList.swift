@@ -24,12 +24,31 @@ struct EventList: View {
     /// Holds the error message to display in the alert.
     @State private var errorMessage: String? = nil
     
+    @State private var eventPendingDelete: ReinforcementTimeEvent? = nil
+    @State private var showDeleteDialog: Bool = false
+    
     
     /// The main view body showing a navigation stack with a scrollable list of events.
-    fileprivate func delteEvent(_ event: ReinforcementTimeEvent) {
-        event.deleteCalendarEvent()
+    
+    /// Helper function to delete an event with proper context and selection update
+    private func deleteEvent(_ event: ReinforcementTimeEvent) {
         context.deleteEvent(event)
-        selected = nil
+        if selected == event {
+            selected = nil
+        }
+    }
+    
+    /// Handles delete requests by checking if the event has a linked calendar event.
+    /// If it does, show the confirmation dialog, otherwise delete immediately.
+    private func requestDelete(_ event: ReinforcementTimeEvent) {
+        if event.calendarEventUUID == nil {
+            // No linked calendar event, delete immediately
+            deleteEvent(event)
+        } else {
+            // Has linked calendar event, show confirmation dialog
+            eventPendingDelete = event
+            showDeleteDialog = true
+        }
     }
     
     var body: some View {
@@ -66,7 +85,7 @@ struct EventList: View {
             }
             .onChange(of: deleteRequested) { _, newValue in
                 guard newValue == true, let event = selected else { return }
-                delteEvent(event)
+                requestDelete(event)
                 deleteRequested = false
             }
             .onAppear(){
@@ -79,11 +98,29 @@ struct EventList: View {
         .alert("Error", isPresented: $showErrorAlert, actions: {
             Button("OK", role: .cancel) {}
         }, message: {
+            
             if let errorMessage {
                 Text(errorMessage)
             }
         })
-        
+        .confirmationDialog("Also remove from calendar?", isPresented: $showDeleteDialog, titleVisibility: .visible) {
+            Button("Remove from calendar and delete event", role: .destructive) {
+                if let event = eventPendingDelete {
+                    event.deleteCalendarEvent()
+                    deleteEvent(event)
+                }
+                eventPendingDelete = nil
+            }
+            Button("Just delete event", role: .destructive) {
+                if let event = eventPendingDelete {
+                    deleteEvent(event)
+                }
+                eventPendingDelete = nil
+            }
+            Button("Cancel", role: .cancel) {
+                eventPendingDelete = nil
+            }
+        }
     }
     
     /// Returns a view representing a single event cell with context menu and tap gestures.
@@ -91,7 +128,7 @@ struct EventList: View {
     @ViewBuilder
     private func eventCell(for event: ReinforcementTimeEvent) -> some View {
         EventRow(event: event, selectedEvent: $selected){
-            delteEvent(event)
+            requestDelete(event)
         }
             .contentShape(Rectangle())
             .onTapGesture {
@@ -123,7 +160,7 @@ struct EventList: View {
                 }) {
                     Label("Add to Calendar", systemImage: "calendar.badge.plus")
                 }
-                Button(role: .destructive, action: { delteEvent(event) }) {
+                Button(role: .destructive, action: { requestDelete(event) }) {
                     Label("Delete", systemImage: "trash")
                 }
             }
