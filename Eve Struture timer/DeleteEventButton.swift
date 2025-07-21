@@ -14,14 +14,14 @@ import SwiftData
 /// Uses focused bindings to access the currently selected event and a delete request flag.
 /// The button is disabled if no event is selected. When pressed, it sets the delete request flag to true.
 struct DeleteEventButton: View {
-    @FocusedBinding(\.selectedEvent) private var selectedEvent
+    @FocusedValue(\.selectedEvent) private var selectedEvent
     @FocusedBinding(\.deleteRequested) private var deleteRequested
 
     var body: some View {
         Button("Delete Event", role: .destructive) {
             deleteRequested = true
         }
-        .disabled(selectedEvent == nil)
+        .disabled(selectedEvent?.wrappedValue == nil)
     }
 }
 

@@ -26,6 +26,12 @@ struct EventList: View {
     
     
     /// The main view body showing a navigation stack with a scrollable list of events.
+    fileprivate func delteEvent(_ event: ReinforcementTimeEvent) {
+        event.deleteCalendarEvent()
+        context.deleteEvent(event)
+        selected = nil
+    }
+    
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -60,9 +66,7 @@ struct EventList: View {
             }
             .onChange(of: deleteRequested) { _, newValue in
                 guard newValue == true, let event = selected else { return }
-                context.deleteEvent(event)
-                event.deleteCalendarEvent()
-                selected = nil
+                delteEvent(event)
                 deleteRequested = false
             }
             .onAppear(){
@@ -87,7 +91,7 @@ struct EventList: View {
     @ViewBuilder
     private func eventCell(for event: ReinforcementTimeEvent) -> some View {
         EventRow(event: event, selectedEvent: $selected){
-            context.deleteEvent(event)
+            delteEvent(event)
         }
             .contentShape(Rectangle())
             .onTapGesture {
@@ -119,7 +123,7 @@ struct EventList: View {
                 }) {
                     Label("Add to Calendar", systemImage: "calendar.badge.plus")
                 }
-                Button(role: .destructive, action: { context.deleteEvent(event) }) {
+                Button(role: .destructive, action: { delteEvent(event) }) {
                     Label("Delete", systemImage: "trash")
                 }
             }

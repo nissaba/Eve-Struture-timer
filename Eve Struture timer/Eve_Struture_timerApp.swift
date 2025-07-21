@@ -20,15 +20,14 @@ struct MyApp: App {
         Window("Eve Structure Timer", id: "mainWindow") {
             EventList()
                 .frame(width: 400, height: 700)
-                .environmentObject(selectionModel)
                 .sheet(isPresented: $showingAbout) {
                     AboutThisAppView(onClose: { showingAbout = false })
                 }
                 .sheet(isPresented: $showingHelp){
                     HelpView(closeAction: {showingHelp = false})
-                    
                 }
         }
+        .environmentObject(selectionModel)
         .windowResizability(.contentSize)
         .modelContainer(for: ReinforcementTimeEvent.self)
         //.commandsRemoved()
@@ -39,20 +38,18 @@ struct MyApp: App {
                 }
             }
             CommandGroup(replacing: .help) {
-                    Button("Eve Structure Timer Help") {
-                        showingHelp = true
-                    }
-                    .keyboardShortcut("?", modifiers: .command)
+                Button("Eve Structure Timer Help") {
+                    showingHelp = true
                 }
+                .keyboardShortcut("?", modifiers: .command)
+            }
 
-                CommandMenu("Events") {
-                    EditEventButton().keyboardShortcut("E")  // Keyboard shortcut for quick access.
-                    AddEventToCalendarButton().keyboardShortcut("F")
-                    Divider()
-                    DeleteEventButton().keyboardShortcut("G")
-                }
+            CommandMenu("Events") {
+                EditEventButton().keyboardShortcut("E")  // Keyboard shortcut for quick access.
+                AddEventToCalendarButton().keyboardShortcut("F")
+                Divider()
+                DeleteEventButton().keyboardShortcut("G")
             }
         }
-
     }
-
+}
