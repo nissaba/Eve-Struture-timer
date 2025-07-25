@@ -53,18 +53,18 @@ struct EventList: View {
     
     var body: some View {
         NavigationStack {
-            ScrollView {
-                LazyVStack(spacing: 12) {
-                    let eventsSnapshot = events
-                    ForEach(eventsSnapshot, id: \.self) { event in
-                        eventCell(for: event)
+            ZStack{
+                BackgroundImage()
+                ScrollView {
+                    LazyVStack(spacing: 12) {
+                        let eventsSnapshot = events
+                        ForEach(eventsSnapshot, id: \.self) { event in
+                            eventCell(for: event)
+                        }
                     }
+                    .padding()
                 }
-                .padding()
             }
-            .background(
-                colorScheme == .dark ? Color.black.opacity(0.3) : Color.white.opacity(0.6)
-            )
             .navigationTitle("Reinforcement Timers")
             .toolbar {
                 Button {
@@ -130,40 +130,52 @@ struct EventList: View {
         EventRow(event: event, selectedEvent: $selected){
             requestDelete(event)
         }
-            .contentShape(Rectangle())
-            .onTapGesture {
-                selected = event
-            }
-            .onTapGesture(count: 2) {
+        .contentShape(Rectangle())
+        .onTapGesture {
+            selected = event
+        }
+        .onTapGesture(count: 2) {
+            selected = event
+            showForm = true
+        }
+        .contextMenu {
+            Button(action: {
                 selected = event
                 showForm = true
+            }) {
+                Label("Edit", systemImage: "square.and.pencil")
             }
-            .contextMenu {
-                Button(action: {
-                    selected = event
-                    showForm = true
-                }) {
-                    Label("Edit", systemImage: "square.and.pencil")
-                }
-                Button(action: {
-                    Task {
-                        do {
-                            let success = await event.addToCalendar()
-                            if success {
-                                try context.save()
-                            }
-                        } catch {
-                            errorMessage = error.localizedDescription
-                            showErrorAlert = true
+            Button(action: {
+                Task {
+                    do {
+                        let success = await event.addToCalendar()
+                        if success {
+                            try context.save()
                         }
+                    } catch {
+                        errorMessage = error.localizedDescription
+                        showErrorAlert = true
                     }
-                }) {
-                    Label("Add to Calendar", systemImage: "calendar.badge.plus")
                 }
-                Button(role: .destructive, action: { requestDelete(event) }) {
-                    Label("Delete", systemImage: "trash")
-                }
+            }) {
+                Label("Add to Calendar", systemImage: "calendar.badge.plus")
             }
+            Button(role: .destructive, action: { requestDelete(event) }) {
+                Label("Delete", systemImage: "trash")
+            }
+        }
+    }
+}
+
+struct BackgroundImage: View {
+    var body: some View {
+        GeometryReader{ geometry in
+            Image("KeepStar")
+                .resizable()
+                .scaledToFill()
+                .frame(width: geometry.size.width, height: geometry.size.height)
+                .clipped()
+        }
     }
 }
 
@@ -197,3 +209,4 @@ extension ReinforcementTimeEvent {
     return EventList()
         .modelContainer(container)
 }
+

@@ -38,13 +38,12 @@ struct EventRow: View {
         .padding(16)
         .background(
             RoundedRectangle(cornerRadius: 18)
-                .fill(Color.gray.opacity(0.12))
+                .fill(.ultraThinMaterial)
         )
         .overlay(
             RoundedRectangle(cornerRadius: 18)
                 .stroke(selectedEvent?.id == event.id ? Color.accentColor : Color.gray.opacity(0.25), lineWidth: selectedEvent?.id == event.id ? 2 : 1)
         )
-        .shadow(color: selectedEvent?.id == event.id ? Color.accentColor.opacity(0.3) : Color.black.opacity(0.10), radius: selectedEvent?.id == event.id ? 10 : 6, x: 0, y: 3)
         .contentShape(Rectangle())
         .onTapGesture {
             selectedEvent = event
