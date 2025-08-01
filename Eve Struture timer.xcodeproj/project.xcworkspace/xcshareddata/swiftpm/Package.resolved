@@ -1,0 +1,15 @@
+{
+  "originHash" : "07a9cdc8939269a1eb4a4d75bd3568f2c5532d3b3bfb943558635b1fe3a78c91",
+  "pins" : [
+    {
+      "identity" : "easyrestclient",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/nissaba/EasyRestClient.git",
+      "state" : {
+        "revision" : "2c51663d28f7c87b81fa920c2448403babdd5814",
+        "version" : "1.1.0"
+      }
+    }
+  ],
+  "version" : 3
+}

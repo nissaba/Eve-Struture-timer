@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		8C9888BA2E3CEAA5003BF35A /* EazyRestClient in Frameworks */ = {isa = PBXBuildFile; productRef = 8C9888B92E3CEAA5003BF35A /* EazyRestClient */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		8C3A30CD2E0B26C10049B78D /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -56,6 +60,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				8C9888BA2E3CEAA5003BF35A /* EazyRestClient in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -109,6 +114,7 @@
 			);
 			name = "Eve Struture timer";
 			packageProductDependencies = (
+				8C9888B92E3CEAA5003BF35A /* EazyRestClient */,
 			);
 			productName = "Eve Struture timer";
 			productReference = 8C28A5D02D7BF9B700205F46 /* Eve Struture timer.app */;
@@ -165,6 +171,9 @@
 			);
 			mainGroup = 8C28A5C72D7BF9B700205F46;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				8C9888B82E3CEAA5003BF35A /* XCRemoteSwiftPackageReference "EasyRestClient" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 8C28A5D12D7BF9B700205F46 /* Products */;
 			projectDirPath = "";
@@ -510,6 +519,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		8C9888B82E3CEAA5003BF35A /* XCRemoteSwiftPackageReference "EasyRestClient" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/nissaba/EasyRestClient.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.1.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		8C9888B92E3CEAA5003BF35A /* EazyRestClient */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 8C9888B82E3CEAA5003BF35A /* XCRemoteSwiftPackageReference "EasyRestClient" */;
+			productName = EazyRestClient;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 8C28A5C82D7BF9B700205F46 /* Project object */;
 }
